@@ -1,0 +1,71 @@
+# =============================================================================
+# nEIP — Docker Compose
+# Services: db (PostgreSQL 17), app (API + web, port 5400), worker (pg-boss)
+# Usage:
+#   cp .env.example .env   # fill in values
+#   docker compose up -d
+# =============================================================================
+
+volumes:
+  pgdata:
+
+services:
+  # ---------------------------------------------------------------------------
+  # db — PostgreSQL 17
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-neip}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-neip}
+      POSTGRES_DB: ${POSTGRES_DB:-neip}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-neip} -d ${POSTGRES_DB:-neip}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # app — Fastify API server (also serves static web assets)
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-5400}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "5400:5400"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # worker — Background job processor (pg-boss)
+  # ---------------------------------------------------------------------------
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      NODE_ENV: ${NODE_ENV:-production}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      db:
+        condition: service_healthy

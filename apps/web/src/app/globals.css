@@ -1,0 +1,431 @@
+/* =============================================================================
+   nEIP Global Styles
+   Tailwind CSS 4.x — CSS-first configuration
+   ============================================================================= */
+
+@import "tailwindcss";
+
+/* =============================================================================
+   Self-hosted Font Faces
+   Fallback to system fonts when woff2 files are not yet present.
+   Place actual font files in public/fonts/ for offline/Docker deployment.
+   ============================================================================= */
+
+/* Noto Sans Thai — primary Thai script font */
+@font-face {
+  font-family: 'Noto Sans Thai';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/NotoSansThai-Regular.woff2') format('woff2');
+  unicode-range: U+0E00-U+0E7F, U+200C-U+200D, U+25CC, U+0000-U+00FF, U+0131,
+    U+0152-U+0153, U+02BB-U+02BC, U+02C6, U+02DA, U+02DC, U+2000-U+206F,
+    U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Noto Sans Thai';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/NotoSansThai-Medium.woff2') format('woff2');
+  unicode-range: U+0E00-U+0E7F, U+0000-U+00FF;
+}
+
+@font-face {
+  font-family: 'Noto Sans Thai';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/NotoSansThai-SemiBold.woff2') format('woff2');
+  unicode-range: U+0E00-U+0E7F, U+0000-U+00FF;
+}
+
+@font-face {
+  font-family: 'Noto Sans Thai';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/NotoSansThai-Bold.woff2') format('woff2');
+  unicode-range: U+0E00-U+0E7F, U+0000-U+00FF;
+}
+
+/* Inter — primary Latin/UI font */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/Inter-Regular.woff2') format('woff2');
+  unicode-range: U+0000-U+00FF, U+0131, U+0152-U+0153, U+02BB-U+02BC, U+02C6,
+    U+02DA, U+02DC, U+2000-U+206F, U+2074, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/Inter-Medium.woff2') format('woff2');
+  unicode-range: U+0000-U+00FF, U+0131, U+0152-U+0153;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/Inter-SemiBold.woff2') format('woff2');
+  unicode-range: U+0000-U+00FF, U+0131, U+0152-U+0153;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/Inter-Bold.woff2') format('woff2');
+  unicode-range: U+0000-U+00FF, U+0131, U+0152-U+0153;
+}
+
+/* JetBrains Mono — monospace for code and financial figures */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+  unicode-range: U+0000-U+00FF, U+0131, U+0152-U+0153, U+02BB-U+02BC, U+02C6,
+    U+02DA, U+02DC, U+2000-U+206F, U+2074, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono-Medium.woff2') format('woff2');
+  unicode-range: U+0000-U+00FF, U+0131, U+0152-U+0153;
+}
+
+/* =============================================================================
+   Tailwind CSS 4.x Theme Configuration (CSS-first via @theme)
+   ============================================================================= */
+
+@theme {
+  /* --------------------------------------------------------------------------
+     Font Families
+     Stack: Noto Sans Thai (Thai script) > Inter (Latin) > system-ui
+     -------------------------------------------------------------------------- */
+  --font-family-sans: 'Noto Sans Thai', 'Inter', ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', ui-monospace,
+    SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+
+  /* --------------------------------------------------------------------------
+     Primary Brand Colors — Blue-Indigo (UX-DR22: differentiate from FlowAccount/PEAK)
+     -------------------------------------------------------------------------- */
+  --color-primary: oklch(55% 0.22 263);
+  --color-primary-foreground: oklch(98% 0.01 263);
+  --color-primary-50: oklch(97% 0.03 263);
+  --color-primary-100: oklch(93% 0.06 263);
+  --color-primary-200: oklch(87% 0.1 263);
+  --color-primary-300: oklch(79% 0.15 263);
+  --color-primary-400: oklch(70% 0.19 263);
+  --color-primary-500: oklch(55% 0.22 263);
+  --color-primary-600: oklch(47% 0.22 263);
+  --color-primary-700: oklch(40% 0.2 263);
+  --color-primary-800: oklch(33% 0.17 263);
+  --color-primary-900: oklch(27% 0.14 263);
+  --color-primary-950: oklch(20% 0.1 263);
+
+  /* --------------------------------------------------------------------------
+     Semantic Status Colors
+     -------------------------------------------------------------------------- */
+
+  /* Destructive / Error */
+  --color-destructive: oklch(55% 0.22 25);
+  --color-destructive-foreground: oklch(98% 0.01 25);
+
+  /* Warning */
+  --color-warning: oklch(75% 0.18 75);
+  --color-warning-foreground: oklch(25% 0.08 75);
+
+  /* Success */
+  --color-success: oklch(60% 0.18 150);
+  --color-success-foreground: oklch(98% 0.01 150);
+
+  /* Info */
+  --color-info: oklch(62% 0.18 225);
+  --color-info-foreground: oklch(98% 0.01 225);
+
+  /* --------------------------------------------------------------------------
+     shadcn/ui semantic tokens (light mode defaults)
+     -------------------------------------------------------------------------- */
+  --color-background: oklch(100% 0 0);
+  --color-foreground: oklch(14% 0.005 285);
+  --color-card: oklch(100% 0 0);
+  --color-card-foreground: oklch(14% 0.005 285);
+  --color-popover: oklch(100% 0 0);
+  --color-popover-foreground: oklch(14% 0.005 285);
+  --color-secondary: oklch(96% 0.005 285);
+  --color-secondary-foreground: oklch(20% 0.005 285);
+  --color-muted: oklch(96% 0.005 285);
+  --color-muted-foreground: oklch(52% 0.01 285);
+  --color-accent: oklch(96% 0.005 285);
+  --color-accent-foreground: oklch(20% 0.005 285);
+  --color-border: oklch(90% 0.005 285);
+  --color-input: oklch(90% 0.005 285);
+  --color-ring: oklch(55% 0.22 263);
+
+  /* --------------------------------------------------------------------------
+     HITL Confidence Zone Colors (UX-DR1)
+     Human-in-the-Loop automation confidence levels
+     -------------------------------------------------------------------------- */
+
+  /* Auto — fully automated, no review needed (green) */
+  --color-hitl-auto: oklch(62% 0.17 150);
+  --color-hitl-auto-bg: oklch(95% 0.04 150);
+  --color-hitl-auto-foreground: oklch(30% 0.1 150);
+
+  /* Suggest — AI suggestion, user confirms (yellow-green) */
+  --color-hitl-suggest: oklch(78% 0.16 130);
+  --color-hitl-suggest-bg: oklch(96% 0.04 130);
+  --color-hitl-suggest-foreground: oklch(35% 0.1 130);
+
+  /* Review — needs human review (orange) */
+  --color-hitl-review: oklch(70% 0.18 55);
+  --color-hitl-review-bg: oklch(95% 0.05 55);
+  --color-hitl-review-foreground: oklch(30% 0.1 55);
+
+  /* Manual — must be done manually (red) */
+  --color-hitl-manual: oklch(58% 0.2 25);
+  --color-hitl-manual-bg: oklch(96% 0.04 25);
+  --color-hitl-manual-foreground: oklch(30% 0.12 25);
+
+  /* Blocked — blocked, cannot proceed (dark/charcoal) */
+  --color-hitl-blocked: oklch(28% 0.01 285);
+  --color-hitl-blocked-bg: oklch(92% 0.01 285);
+  --color-hitl-blocked-foreground: oklch(95% 0.005 285);
+
+  /* --------------------------------------------------------------------------
+     Financial Data Colors
+     -------------------------------------------------------------------------- */
+
+  /* Positive amount / credit / income */
+  --color-money-positive: oklch(55% 0.18 150);
+  --color-money-positive-bg: oklch(96% 0.04 150);
+
+  /* Negative amount / debit / expense */
+  --color-money-negative: oklch(52% 0.2 25);
+  --color-money-negative-bg: oklch(97% 0.04 25);
+
+  /* Neutral / zero balance */
+  --color-money-neutral: oklch(50% 0.01 285);
+  --color-money-neutral-bg: oklch(95% 0.005 285);
+
+  /* Overdue payment (past due date) */
+  --color-overdue: oklch(48% 0.22 25);
+  --color-overdue-bg: oklch(95% 0.06 25);
+
+  /* Due soon (within 7 days) */
+  --color-due-soon: oklch(68% 0.17 55);
+  --color-due-soon-bg: oklch(96% 0.05 55);
+
+  /* --------------------------------------------------------------------------
+     Border Radius
+     -------------------------------------------------------------------------- */
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: calc(var(--radius));
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  /* --------------------------------------------------------------------------
+     Typography Scale
+     -------------------------------------------------------------------------- */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;        /* 16px — minimum for iOS Safari auto-zoom prevention */
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+
+  /* Dense line-height for financial tables */
+  --line-height-dense: 1.25;
+  --line-height-tight: 1.35;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+}
+
+/* =============================================================================
+   Dark Mode Theme Overrides
+   ============================================================================= */
+
+@layer base {
+  .dark {
+    --color-background: oklch(9% 0.005 285);
+    --color-foreground: oklch(96% 0.005 285);
+    --color-card: oklch(12% 0.005 285);
+    --color-card-foreground: oklch(96% 0.005 285);
+    --color-popover: oklch(12% 0.005 285);
+    --color-popover-foreground: oklch(96% 0.005 285);
+    --color-primary: oklch(65% 0.22 263);
+    --color-primary-foreground: oklch(15% 0.05 263);
+    --color-secondary: oklch(18% 0.005 285);
+    --color-secondary-foreground: oklch(96% 0.005 285);
+    --color-muted: oklch(18% 0.005 285);
+    --color-muted-foreground: oklch(62% 0.01 285);
+    --color-accent: oklch(18% 0.005 285);
+    --color-accent-foreground: oklch(96% 0.005 285);
+    --color-destructive: oklch(62% 0.22 25);
+    --color-border: oklch(22% 0.005 285);
+    --color-input: oklch(22% 0.005 285);
+    --color-ring: oklch(65% 0.22 263);
+  }
+}
+
+/* =============================================================================
+   Base Layer — Global Defaults
+   ============================================================================= */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    border-color: var(--color-border);
+  }
+
+  html {
+    /* Prevent tap-highlight on mobile */
+    -webkit-tap-highlight-color: transparent;
+    /* Improve text rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-family-sans);
+    /* Minimum 16px body text — prevents iOS Safari auto-zoom on input focus */
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+  }
+
+  /* Ensure inputs never trigger iOS auto-zoom (must be >= 16px) */
+  input,
+  select,
+  textarea {
+    font-size: max(var(--font-size-base), 1rem);
+  }
+
+  /* Focus ring — accessible, uses primary color */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* =============================================================================
+   Component Layer
+   ============================================================================= */
+
+@layer components {
+  /* shadcn/ui compatible base reset for buttons */
+  .btn-reset {
+    all: unset;
+    cursor: pointer;
+  }
+}
+
+/* =============================================================================
+   Utility Layer — Custom Utilities
+   ============================================================================= */
+
+@layer utilities {
+  /* Tabular numbers — for money columns, ensures digits align vertically */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  /* Oldstyle figures for flowing prose numbers */
+  .oldstyle-nums {
+    font-variant-numeric: oldstyle-nums;
+  }
+
+  /* Dense line-height variant for financial data tables */
+  .leading-dense {
+    line-height: var(--line-height-dense);
+  }
+
+  /* Slightly tighter than normal — use for compact list items */
+  .leading-tight {
+    line-height: var(--line-height-tight);
+  }
+
+  /* Monospace font utility for financial figures, amounts, codes */
+  .font-mono-figures {
+    font-family: var(--font-family-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'zero' 1;
+  }
+
+  /* HITL zone color utilities */
+  .hitl-auto {
+    color: var(--color-hitl-auto);
+    background-color: var(--color-hitl-auto-bg);
+  }
+
+  .hitl-suggest {
+    color: var(--color-hitl-suggest);
+    background-color: var(--color-hitl-suggest-bg);
+  }
+
+  .hitl-review {
+    color: var(--color-hitl-review);
+    background-color: var(--color-hitl-review-bg);
+  }
+
+  .hitl-manual {
+    color: var(--color-hitl-manual);
+    background-color: var(--color-hitl-manual-bg);
+  }
+
+  .hitl-blocked {
+    color: var(--color-hitl-blocked-foreground);
+    background-color: var(--color-hitl-blocked);
+  }
+
+  /* Financial amount color utilities */
+  .money-positive {
+    color: var(--color-money-positive);
+  }
+
+  .money-negative {
+    color: var(--color-money-negative);
+  }
+
+  .money-neutral {
+    color: var(--color-money-neutral);
+  }
+
+  .overdue {
+    color: var(--color-overdue);
+  }
+
+  .due-soon {
+    color: var(--color-due-soon);
+  }
+}

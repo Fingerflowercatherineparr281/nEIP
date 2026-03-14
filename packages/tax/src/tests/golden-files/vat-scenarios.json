@@ -1,0 +1,61 @@
+{
+  "description": "VAT golden file test scenarios \u2014 all amounts in satang, rates in basis points",
+  "scenarios": [
+    {
+      "name": "Standard 7% VAT on 1000.00",
+      "amountSatang": "100000",
+      "rateBasisPoints": 700,
+      "expectedTaxSatang": "7000",
+      "expectedTotalSatang": "107000"
+    },
+    {
+      "name": "Standard 7% VAT on 100.00",
+      "amountSatang": "10000",
+      "rateBasisPoints": 700,
+      "expectedTaxSatang": "700",
+      "expectedTotalSatang": "10700"
+    },
+    {
+      "name": "Standard 7% VAT on 0.01 (1 satang)",
+      "amountSatang": "1",
+      "rateBasisPoints": 700,
+      "expectedTaxSatang": "0",
+      "expectedTotalSatang": "1"
+    },
+    {
+      "name": "Standard 7% VAT on 1000000.00",
+      "amountSatang": "100000000",
+      "rateBasisPoints": 700,
+      "expectedTaxSatang": "7000000",
+      "expectedTotalSatang": "107000000"
+    },
+    {
+      "name": "10% VAT on 500.00",
+      "amountSatang": "50000",
+      "rateBasisPoints": 1000,
+      "expectedTaxSatang": "5000",
+      "expectedTotalSatang": "55000"
+    },
+    {
+      "name": "0% VAT on 1000.00",
+      "amountSatang": "100000",
+      "rateBasisPoints": 0,
+      "expectedTaxSatang": "0",
+      "expectedTotalSatang": "100000"
+    },
+    {
+      "name": "7% VAT on 33.33 \u2014 round half-up test",
+      "amountSatang": "3333",
+      "rateBasisPoints": 700,
+      "expectedTaxSatang": "233",
+      "expectedTotalSatang": "3566"
+    },
+    {
+      "name": "7% VAT on 142.86 \u2014 rounding boundary",
+      "amountSatang": "14286",
+      "rateBasisPoints": 700,
+      "expectedTaxSatang": "1000",
+      "expectedTotalSatang": "15286"
+    }
+  ]
+}

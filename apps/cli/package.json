@@ -1,0 +1,30 @@
+{
+  "name": "cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "nEIP CLI tool",
+  "main": "./dist/index.js",
+  "bin": {
+    "neip": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "dev": "tsc --build --watch",
+    "start": "node dist/index.js",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@neip/core": "workspace:*",
+    "@neip/db": "workspace:*",
+    "@neip/shared": "workspace:*",
+    "commander": "^14.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "25.5.0",
+    "typescript": "*"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "description": "Rounding edge cases \u2014 verifies round-half-up (Thai Revenue Department rule)",
+  "scenarios": [
+    {
+      "name": "Exact division \u2014 no rounding needed",
+      "amountSatang": "100000",
+      "rateBasisPoints": 700,
+      "expectedTaxSatang": "7000"
+    },
+    {
+      "name": "Round up at exactly half \u2014 7% of 3333 satang",
+      "amountSatang": "3333",
+      "rateBasisPoints": 700,
+      "expectedTaxSatang": "233"
+    },
+    {
+      "name": "Very small amount \u2014 1 satang at 7%",
+      "amountSatang": "1",
+      "rateBasisPoints": 700,
+      "expectedTaxSatang": "0"
+    },
+    {
+      "name": "Zero amount \u2014 0 satang at 7%",
+      "amountSatang": "0",
+      "rateBasisPoints": 700,
+      "expectedTaxSatang": "0"
+    },
+    {
+      "name": "Large amount \u2014 1 billion satang at 7%",
+      "amountSatang": "100000000000",
+      "rateBasisPoints": 700,
+      "expectedTaxSatang": "7000000000"
+    },
+    {
+      "name": "Odd rate \u2014 3.5% (350 bp) of 10000",
+      "amountSatang": "10000",
+      "rateBasisPoints": 350,
+      "expectedTaxSatang": "350"
+    },
+    {
+      "name": "1 bp (0.01%) of 10000 satang",
+      "amountSatang": "10000",
+      "rateBasisPoints": 1,
+      "expectedTaxSatang": "1"
+    },
+    {
+      "name": "Rounding boundary \u2014 7% of 7143 satang",
+      "amountSatang": "7143",
+      "rateBasisPoints": 700,
+      "expectedTaxSatang": "500"
+    }
+  ]
+}

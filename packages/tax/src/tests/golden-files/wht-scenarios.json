@@ -1,0 +1,53 @@
+{
+  "description": "WHT golden file test scenarios — net = base - WHT",
+  "scenarios": [
+    {
+      "name": "3% WHT on 100000.00 services",
+      "incomeType": "services",
+      "amountSatang": "10000000",
+      "rateBasisPoints": 300,
+      "expectedTaxSatang": "300000",
+      "expectedNetSatang": "9700000"
+    },
+    {
+      "name": "5% WHT on 50000.00 rent",
+      "incomeType": "rent",
+      "amountSatang": "5000000",
+      "rateBasisPoints": 500,
+      "expectedTaxSatang": "250000",
+      "expectedNetSatang": "4750000"
+    },
+    {
+      "name": "10% WHT on 200000.00 dividends",
+      "incomeType": "dividends",
+      "amountSatang": "20000000",
+      "rateBasisPoints": 1000,
+      "expectedTaxSatang": "2000000",
+      "expectedNetSatang": "18000000"
+    },
+    {
+      "name": "2% WHT on 10000.00 advertising",
+      "incomeType": "advertising",
+      "amountSatang": "1000000",
+      "rateBasisPoints": 200,
+      "expectedTaxSatang": "20000",
+      "expectedNetSatang": "980000"
+    },
+    {
+      "name": "1% WHT on 75000.00 transport",
+      "incomeType": "transport",
+      "amountSatang": "7500000",
+      "rateBasisPoints": 100,
+      "expectedTaxSatang": "75000",
+      "expectedNetSatang": "7425000"
+    },
+    {
+      "name": "3% WHT on 33.33 — round half-up",
+      "incomeType": "professional",
+      "amountSatang": "3333",
+      "rateBasisPoints": 300,
+      "expectedTaxSatang": "100",
+      "expectedNetSatang": "3233"
+    }
+  ]
+}

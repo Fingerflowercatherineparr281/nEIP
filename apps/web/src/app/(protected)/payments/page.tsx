@@ -1,0 +1,164 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import { Plus } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+
+import { useApi } from '@/lib/hooks';
+import { Button } from '@/components/ui/button';
+import { FilterBar } from '@/components/ui/filter-bar';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SkeletonRow } from '@/components/ui/skeleton';
+import { MoneyDisplay } from '@/components/domain/money-display';
+import { DocumentStatus } from '@/components/domain/document-status';
+import type { DocumentStatusValue } from '@/components/domain/document-status';
+import { CreditCard } from 'lucide-react';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface Payment {
+  id: string;
+  reference: string;
+  payerName: string;
+  /** Amount in satang */
+  amount: number;
+  date: string;
+  status: DocumentStatusValue;
+  matchedInvoiceRef?: string;
+  matchedInvoiceId?: string;
+}
+
+interface PaymentListResponse {
+  data: Payment[];
+  total: number;
+}
+
+const STATUS_OPTIONS = [
+  { label: 'Pending', value: 'pending' },
+  { label: 'Approved', value: 'approved' },
+  { label: 'Posted', value: 'posted' },
+];
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
+export default function PaymentsPage(): React.JSX.Element {
+  const router = useRouter();
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  const params = useMemo(() => {
+    const p: Record<string, string> = {};
+    if (search) p['search'] = search;
+    if (status) p['status'] = status;
+    if (dateFrom) p['dateFrom'] = dateFrom;
+    if (dateTo) p['dateTo'] = dateTo;
+    return p;
+  }, [search, status, dateFrom, dateTo]);
+
+  const { data, loading } = useApi<PaymentListResponse>('/payments', params);
+  const payments = data?.data ?? [];
+
+  return (
+    <div className="space-y-6 p-4 lg:p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-[var(--color-foreground)]">Payments</h1>
+          <p className="text-sm text-[var(--color-muted-foreground)]">
+            Record and match payments to invoices
+          </p>
+        </div>
+        <Link href="/payments/new">
+          <Button variant="primary">
+            <Plus className="h-4 w-4" />
+            Record Payment
+          </Button>
+        </Link>
+      </div>
+
+      {/* Filters */}
+      <FilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search payments..."
+        statusOptions={STATUS_OPTIONS}
+        statusValue={status}
+        onStatusChange={setStatus}
+        dateFrom={dateFrom}
+        onDateFromChange={setDateFrom}
+        dateTo={dateTo}
+        onDateToChange={setDateTo}
+        resultCount={data?.total}
+      />
+
+      {/* Table */}
+      {loading ? (
+        <SkeletonRow count={5} />
+      ) : payments.length === 0 ? (
+        <EmptyState
+          icon={CreditCard}
+          message="No payments found"
+          description="No payments match the current filters."
+          ctaLabel="Record Payment"
+          onCtaClick={() => router.push('/payments/new')}
+        />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[var(--color-border)] text-left text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+                <th className="px-4 py-3">Reference</th>
+                <th className="px-4 py-3">Payer</th>
+                <th className="px-4 py-3 text-right">Amount</th>
+                <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Matched Invoice</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payments.map((pmt) => (
+                <tr
+                  key={pmt.id}
+                  className="border-b border-[var(--color-border)] transition-colors hover:bg-[var(--color-accent)]/30"
+                >
+                  <td className="px-4 py-3 font-mono-figures font-medium">
+                    {pmt.reference}
+                  </td>
+                  <td className="px-4 py-3">{pmt.payerName}</td>
+                  <td className="px-4 py-3 text-right">
+                    <MoneyDisplay amount={BigInt(pmt.amount)} size="sm" />
+                  </td>
+                  <td className="px-4 py-3 text-[var(--color-muted-foreground)]">
+                    {new Date(pmt.date).toLocaleDateString('th-TH')}
+                  </td>
+                  <td className="px-4 py-3">
+                    <DocumentStatus status={pmt.status} size="sm" />
+                  </td>
+                  <td className="px-4 py-3">
+                    {pmt.matchedInvoiceRef ? (
+                      <Link
+                        href={`/invoices/${pmt.matchedInvoiceId ?? ''}`}
+                        className="font-mono-figures text-[var(--color-primary)] hover:underline"
+                      >
+                        {pmt.matchedInvoiceRef}
+                      </Link>
+                    ) : (
+                      <span className="text-[var(--color-muted-foreground)]">--</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

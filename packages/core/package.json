@@ -1,0 +1,42 @@
+{
+  "name": "@neip/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Core business logic for nEIP",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "dev": "tsc --build --watch",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run --reporter=verbose",
+    "clean": "rm -rf dist .turbo tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@neip/db": "workspace:*",
+    "@neip/shared": "workspace:*",
+    "@neip/tax": "workspace:*",
+    "drizzle-orm": "0.44.0",
+    "exceljs": "^4.4.0",
+    "nodemailer": "^8.0.2",
+    "papaparse": "^5.5.3",
+    "uuidv7": "^1.1.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^7.0.11",
+    "@types/papaparse": "^5.5.2",
+    "typescript": "*",
+    "vitest": "*"
+  }
+}

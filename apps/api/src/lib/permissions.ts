@@ -1,0 +1,323 @@
+/**
+ * permissions.ts — All MVP-α permission constants.
+ *
+ * Permissions follow a `<module>:<resource>:<action>` naming convention
+ * so they can be grouped and matched by prefix.
+ *
+ * Architecture references:
+ *   AR22 — Custom table-based RBAC
+ *   FR36  — Role-based access control
+ *   FR37  — Permission enforcement on all API routes
+ *
+ * Default role assignments:
+ *
+ *   Owner      → ALL permissions
+ *   Accountant → GL + AR + AP + reporting permissions
+ *   Approver   → HITL view + approve/reject permissions
+ */
+
+// ---------------------------------------------------------------------------
+// General Ledger (GL)
+// ---------------------------------------------------------------------------
+
+export const GL_JOURNAL_CREATE = 'gl:journal:create' as const;
+export const GL_JOURNAL_READ = 'gl:journal:read' as const;
+export const GL_JOURNAL_UPDATE = 'gl:journal:update' as const;
+export const GL_JOURNAL_DELETE = 'gl:journal:delete' as const;
+export const GL_JOURNAL_POST = 'gl:journal:post' as const;
+export const GL_JOURNAL_REVERSE = 'gl:journal:reverse' as const;
+export const GL_ACCOUNT_CREATE = 'gl:account:create' as const;
+export const GL_ACCOUNT_READ = 'gl:account:read' as const;
+export const GL_ACCOUNT_UPDATE = 'gl:account:update' as const;
+export const GL_ACCOUNT_DELETE = 'gl:account:delete' as const;
+export const GL_PERIOD_CLOSE = 'gl:period:close' as const;
+export const GL_PERIOD_READ = 'gl:period:read' as const;
+
+// ---------------------------------------------------------------------------
+// Accounts Receivable (AR)
+// ---------------------------------------------------------------------------
+
+export const AR_INVOICE_CREATE = 'ar:invoice:create' as const;
+export const AR_INVOICE_READ = 'ar:invoice:read' as const;
+export const AR_INVOICE_UPDATE = 'ar:invoice:update' as const;
+export const AR_INVOICE_DELETE = 'ar:invoice:delete' as const;
+export const AR_INVOICE_SEND = 'ar:invoice:send' as const;
+export const AR_INVOICE_VOID = 'ar:invoice:void' as const;
+export const AR_PAYMENT_CREATE = 'ar:payment:create' as const;
+export const AR_PAYMENT_READ = 'ar:payment:read' as const;
+export const AR_PAYMENT_UPDATE = 'ar:payment:update' as const;
+export const AR_CUSTOMER_CREATE = 'ar:customer:create' as const;
+export const AR_CUSTOMER_READ = 'ar:customer:read' as const;
+export const AR_CUSTOMER_UPDATE = 'ar:customer:update' as const;
+export const AR_CUSTOMER_DELETE = 'ar:customer:delete' as const;
+
+// ---------------------------------------------------------------------------
+// Accounts Payable (AP)
+// ---------------------------------------------------------------------------
+
+export const AP_BILL_CREATE = 'ap:bill:create' as const;
+export const AP_BILL_READ = 'ap:bill:read' as const;
+export const AP_BILL_UPDATE = 'ap:bill:update' as const;
+export const AP_BILL_DELETE = 'ap:bill:delete' as const;
+export const AP_BILL_APPROVE = 'ap:bill:approve' as const;
+export const AP_PAYMENT_CREATE = 'ap:payment:create' as const;
+export const AP_PAYMENT_READ = 'ap:payment:read' as const;
+export const AP_PAYMENT_UPDATE = 'ap:payment:update' as const;
+export const AP_VENDOR_CREATE = 'ap:vendor:create' as const;
+export const AP_VENDOR_READ = 'ap:vendor:read' as const;
+export const AP_VENDOR_UPDATE = 'ap:vendor:update' as const;
+export const AP_VENDOR_DELETE = 'ap:vendor:delete' as const;
+
+// ---------------------------------------------------------------------------
+// Human-in-the-loop (HITL) — AI action approval queue
+// ---------------------------------------------------------------------------
+
+export const HITL_QUEUE_READ = 'hitl:queue:read' as const;
+export const HITL_APPROVE = 'hitl:approve' as const;
+export const HITL_REJECT = 'hitl:reject' as const;
+
+// ---------------------------------------------------------------------------
+// Reporting
+// ---------------------------------------------------------------------------
+
+export const REPORT_GL_READ = 'report:gl:read' as const;
+export const REPORT_AR_READ = 'report:ar:read' as const;
+export const REPORT_AP_READ = 'report:ap:read' as const;
+export const REPORT_TRIAL_BALANCE_READ = 'report:trial-balance:read' as const;
+export const REPORT_BALANCE_SHEET_READ = 'report:balance-sheet:read' as const;
+export const REPORT_INCOME_STATEMENT_READ = 'report:income-statement:read' as const;
+
+// ---------------------------------------------------------------------------
+// Import / Export (Stories 8.1, 8.3)
+// ---------------------------------------------------------------------------
+
+export const DATA_IMPORT = 'data:import' as const;
+export const DATA_EXPORT = 'data:export' as const;
+
+// ---------------------------------------------------------------------------
+// User & Tenant management
+// ---------------------------------------------------------------------------
+
+export const USER_INVITE = 'user:invite' as const;
+export const USER_READ = 'user:read' as const;
+export const USER_UPDATE = 'user:update' as const;
+export const USER_DEACTIVATE = 'user:deactivate' as const;
+export const ROLE_ASSIGN = 'role:assign' as const;
+export const ROLE_READ = 'role:read' as const;
+export const ROLE_CREATE = 'role:create' as const;
+export const ROLE_UPDATE = 'role:update' as const;
+export const ROLE_DELETE = 'role:delete' as const;
+
+// ---------------------------------------------------------------------------
+// Webhooks (Story 13.1)
+// ---------------------------------------------------------------------------
+
+export const WEBHOOK_CREATE = 'webhook:create' as const;
+export const WEBHOOK_READ = 'webhook:read' as const;
+export const WEBHOOK_DELETE = 'webhook:delete' as const;
+
+// ---------------------------------------------------------------------------
+// Union type — exhaustive set of all permission strings
+// ---------------------------------------------------------------------------
+
+export type Permission =
+  | typeof GL_JOURNAL_CREATE
+  | typeof GL_JOURNAL_READ
+  | typeof GL_JOURNAL_UPDATE
+  | typeof GL_JOURNAL_DELETE
+  | typeof GL_JOURNAL_POST
+  | typeof GL_JOURNAL_REVERSE
+  | typeof GL_ACCOUNT_CREATE
+  | typeof GL_ACCOUNT_READ
+  | typeof GL_ACCOUNT_UPDATE
+  | typeof GL_ACCOUNT_DELETE
+  | typeof GL_PERIOD_CLOSE
+  | typeof GL_PERIOD_READ
+  | typeof AR_INVOICE_CREATE
+  | typeof AR_INVOICE_READ
+  | typeof AR_INVOICE_UPDATE
+  | typeof AR_INVOICE_DELETE
+  | typeof AR_INVOICE_SEND
+  | typeof AR_INVOICE_VOID
+  | typeof AR_PAYMENT_CREATE
+  | typeof AR_PAYMENT_READ
+  | typeof AR_PAYMENT_UPDATE
+  | typeof AR_CUSTOMER_CREATE
+  | typeof AR_CUSTOMER_READ
+  | typeof AR_CUSTOMER_UPDATE
+  | typeof AR_CUSTOMER_DELETE
+  | typeof AP_BILL_CREATE
+  | typeof AP_BILL_READ
+  | typeof AP_BILL_UPDATE
+  | typeof AP_BILL_DELETE
+  | typeof AP_BILL_APPROVE
+  | typeof AP_PAYMENT_CREATE
+  | typeof AP_PAYMENT_READ
+  | typeof AP_PAYMENT_UPDATE
+  | typeof AP_VENDOR_CREATE
+  | typeof AP_VENDOR_READ
+  | typeof AP_VENDOR_UPDATE
+  | typeof AP_VENDOR_DELETE
+  | typeof HITL_QUEUE_READ
+  | typeof HITL_APPROVE
+  | typeof HITL_REJECT
+  | typeof REPORT_GL_READ
+  | typeof REPORT_AR_READ
+  | typeof REPORT_AP_READ
+  | typeof REPORT_TRIAL_BALANCE_READ
+  | typeof REPORT_BALANCE_SHEET_READ
+  | typeof REPORT_INCOME_STATEMENT_READ
+  | typeof USER_INVITE
+  | typeof USER_READ
+  | typeof USER_UPDATE
+  | typeof USER_DEACTIVATE
+  | typeof ROLE_ASSIGN
+  | typeof ROLE_READ
+  | typeof ROLE_CREATE
+  | typeof ROLE_UPDATE
+  | typeof ROLE_DELETE
+  | typeof WEBHOOK_CREATE
+  | typeof WEBHOOK_READ
+  | typeof WEBHOOK_DELETE
+  | typeof DATA_IMPORT
+  | typeof DATA_EXPORT;
+
+// ---------------------------------------------------------------------------
+// Permission sets — grouped by default role
+// ---------------------------------------------------------------------------
+
+/** Every permission — granted to the Owner role. */
+export const ALL_PERMISSIONS: readonly Permission[] = [
+  GL_JOURNAL_CREATE,
+  GL_JOURNAL_READ,
+  GL_JOURNAL_UPDATE,
+  GL_JOURNAL_DELETE,
+  GL_JOURNAL_POST,
+  GL_JOURNAL_REVERSE,
+  GL_ACCOUNT_CREATE,
+  GL_ACCOUNT_READ,
+  GL_ACCOUNT_UPDATE,
+  GL_ACCOUNT_DELETE,
+  GL_PERIOD_CLOSE,
+  GL_PERIOD_READ,
+  AR_INVOICE_CREATE,
+  AR_INVOICE_READ,
+  AR_INVOICE_UPDATE,
+  AR_INVOICE_DELETE,
+  AR_INVOICE_SEND,
+  AR_INVOICE_VOID,
+  AR_PAYMENT_CREATE,
+  AR_PAYMENT_READ,
+  AR_PAYMENT_UPDATE,
+  AR_CUSTOMER_CREATE,
+  AR_CUSTOMER_READ,
+  AR_CUSTOMER_UPDATE,
+  AR_CUSTOMER_DELETE,
+  AP_BILL_CREATE,
+  AP_BILL_READ,
+  AP_BILL_UPDATE,
+  AP_BILL_DELETE,
+  AP_BILL_APPROVE,
+  AP_PAYMENT_CREATE,
+  AP_PAYMENT_READ,
+  AP_PAYMENT_UPDATE,
+  AP_VENDOR_CREATE,
+  AP_VENDOR_READ,
+  AP_VENDOR_UPDATE,
+  AP_VENDOR_DELETE,
+  HITL_QUEUE_READ,
+  HITL_APPROVE,
+  HITL_REJECT,
+  REPORT_GL_READ,
+  REPORT_AR_READ,
+  REPORT_AP_READ,
+  REPORT_TRIAL_BALANCE_READ,
+  REPORT_BALANCE_SHEET_READ,
+  REPORT_INCOME_STATEMENT_READ,
+  USER_INVITE,
+  USER_READ,
+  USER_UPDATE,
+  USER_DEACTIVATE,
+  ROLE_ASSIGN,
+  ROLE_READ,
+  ROLE_CREATE,
+  ROLE_UPDATE,
+  ROLE_DELETE,
+  WEBHOOK_CREATE,
+  WEBHOOK_READ,
+  WEBHOOK_DELETE,
+  DATA_IMPORT,
+  DATA_EXPORT,
+] as const;
+
+/**
+ * Permissions granted to the Accountant role.
+ * Can create/edit/post journal entries, manage AR invoices/payments, manage AP bills/payments,
+ * manage customers/vendors, and view all reports.
+ */
+export const ACCOUNTANT_PERMISSIONS: readonly Permission[] = [
+  // GL
+  GL_JOURNAL_CREATE,
+  GL_JOURNAL_READ,
+  GL_JOURNAL_UPDATE,
+  GL_JOURNAL_POST,
+  GL_JOURNAL_REVERSE,
+  GL_ACCOUNT_READ,
+  GL_PERIOD_READ,
+  // AR
+  AR_INVOICE_CREATE,
+  AR_INVOICE_READ,
+  AR_INVOICE_UPDATE,
+  AR_INVOICE_SEND,
+  AR_PAYMENT_CREATE,
+  AR_PAYMENT_READ,
+  AR_PAYMENT_UPDATE,
+  AR_CUSTOMER_CREATE,
+  AR_CUSTOMER_READ,
+  AR_CUSTOMER_UPDATE,
+  // AP
+  AP_BILL_CREATE,
+  AP_BILL_READ,
+  AP_BILL_UPDATE,
+  AP_PAYMENT_CREATE,
+  AP_PAYMENT_READ,
+  AP_PAYMENT_UPDATE,
+  AP_VENDOR_CREATE,
+  AP_VENDOR_READ,
+  AP_VENDOR_UPDATE,
+  // Reports
+  REPORT_GL_READ,
+  REPORT_AR_READ,
+  REPORT_AP_READ,
+  REPORT_TRIAL_BALANCE_READ,
+  REPORT_BALANCE_SHEET_READ,
+  REPORT_INCOME_STATEMENT_READ,
+  // Import / Export
+  DATA_IMPORT,
+  DATA_EXPORT,
+  // User visibility
+  USER_READ,
+] as const;
+
+/**
+ * Permissions granted to the Approver role.
+ * Can view and action the HITL queue only.
+ */
+export const APPROVER_PERMISSIONS: readonly Permission[] = [
+  HITL_QUEUE_READ,
+  HITL_APPROVE,
+  HITL_REJECT,
+] as const;
+
+// ---------------------------------------------------------------------------
+// Default role names
+// ---------------------------------------------------------------------------
+
+export const ROLE_OWNER = 'Owner' as const;
+export const ROLE_ACCOUNTANT = 'Accountant' as const;
+export const ROLE_APPROVER = 'Approver' as const;
+
+export type DefaultRoleName =
+  | typeof ROLE_OWNER
+  | typeof ROLE_ACCOUNTANT
+  | typeof ROLE_APPROVER;

@@ -1,0 +1,55 @@
+{
+  "description": "Rate change boundary scenarios — tests correct rate based on transaction date vs effective date",
+  "scenarios": [
+    {
+      "name": "Transaction BEFORE rate change — uses old default 7%",
+      "transactionDate": "2024-06-30T00:00:00.000Z",
+      "rateChangeDate": "2024-07-01T00:00:00.000Z",
+      "oldRateBasisPoints": 700,
+      "newRateBasisPoints": 1000,
+      "amountSatang": "100000",
+      "expectedRateBasisPoints": 700,
+      "expectedTaxSatang": "7000"
+    },
+    {
+      "name": "Transaction ON rate change date — uses new rate 10%",
+      "transactionDate": "2024-07-01T00:00:00.000Z",
+      "rateChangeDate": "2024-07-01T00:00:00.000Z",
+      "oldRateBasisPoints": 700,
+      "newRateBasisPoints": 1000,
+      "amountSatang": "100000",
+      "expectedRateBasisPoints": 1000,
+      "expectedTaxSatang": "10000"
+    },
+    {
+      "name": "Transaction AFTER rate change — uses new rate 10%",
+      "transactionDate": "2024-08-15T00:00:00.000Z",
+      "rateChangeDate": "2024-07-01T00:00:00.000Z",
+      "oldRateBasisPoints": 700,
+      "newRateBasisPoints": 1000,
+      "amountSatang": "100000",
+      "expectedRateBasisPoints": 1000,
+      "expectedTaxSatang": "10000"
+    },
+    {
+      "name": "Custom old rate (9%) before change to 5%",
+      "transactionDate": "2024-03-15T00:00:00.000Z",
+      "rateChangeDate": "2024-07-01T00:00:00.000Z",
+      "oldRateBasisPoints": 900,
+      "newRateBasisPoints": 500,
+      "amountSatang": "100000",
+      "expectedRateBasisPoints": 900,
+      "expectedTaxSatang": "9000"
+    },
+    {
+      "name": "Rate change with rounding — 10% to 7% on 33.33",
+      "transactionDate": "2024-08-01T00:00:00.000Z",
+      "rateChangeDate": "2024-07-01T00:00:00.000Z",
+      "oldRateBasisPoints": 1000,
+      "newRateBasisPoints": 700,
+      "amountSatang": "3333",
+      "expectedRateBasisPoints": 700,
+      "expectedTaxSatang": "233"
+    }
+  ]
+}
