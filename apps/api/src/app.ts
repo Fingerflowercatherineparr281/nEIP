@@ -45,12 +45,14 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import requestIdPlugin from './plugins/request-id.js';
 import errorHandlerPlugin from './plugins/error-handler.js';
+import auditLogPlugin from './plugins/audit-log.js';
 import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './routes/auth/index.js';
 import { userRoutes } from './routes/users/index.js';
 import { tenantRoutes } from './routes/tenants/index.js';
 import { glRoutes } from './routes/gl/index.js';
 import { arRoutes } from './routes/ar/index.js';
+import { quotationRoutes } from './routes/quotations/index.js';
 import { apRoutes } from './routes/ap/index.js';
 import { reportRoutes } from './routes/reports/index.js';
 import { importRoutes } from './routes/import/index.js';
@@ -62,12 +64,24 @@ import { monthEndRoutes } from './routes/month-end/index.js';
 import { webhookRoutesPlugin } from './routes/webhooks/index.js';
 import { roleRoutesPlugin } from './routes/roles/index.js';
 import { firmRoutes } from './routes/firm/index.js';
+import { auditRoutes } from './routes/audit/index.js';
+import { inventoryRoutes } from './routes/inventory/index.js';
+import { contactRoutes } from './routes/contacts/index.js';
+import { employeeRoutes } from './routes/employees/index.js';
+import { payrollRoutes } from './routes/payroll/index.js';
+import { leaveRoutes } from './routes/leave/index.js';
+import { fixedAssetRoutes } from './routes/fixed-assets/index.js';
+import { bankRoutes } from './routes/bank/index.js';
+import { whtRoutes } from './routes/wht/index.js';
+import { costCenterRoutes } from './routes/cost-centers/index.js';
+import { profitCenterRoutes } from './routes/profit-centers/index.js';
 
 // ---------------------------------------------------------------------------
 // Fastify type augmentation — extend FastifyInstance with db + sql clients
 // ---------------------------------------------------------------------------
 
 import type { Sql } from 'postgres';
+import type { AuditService } from '@neip/core';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -75,6 +89,8 @@ declare module 'fastify' {
     db: DbClient;
     /** Raw postgres.js SQL client (used for low-level probes like health check) */
     sql: Sql;
+    /** AuditService instance for manual audit logging in route handlers */
+    audit: AuditService;
   }
 }
 
@@ -162,7 +178,7 @@ export async function createApp(config: AppConfig): Promise<App> {
     ajv: {
       customOptions: {
         removeAdditional: false,
-        coerceTypes: false,
+        coerceTypes: 'array',
         allErrors: true,
       },
     },
@@ -232,7 +248,7 @@ export async function createApp(config: AppConfig): Promise<App> {
 
   await app.register(rateLimit, {
     global: true,
-    max: 300,
+    max: nodeEnv === "production" ? 300 : 10000,
     timeWindow: '1 minute',
     // Key is derived from tenant ID (from JWT sub) or API key header,
     // falling back to IP. Full per-tenant keying is wired in Story 4.2
@@ -332,6 +348,28 @@ export async function createApp(config: AppConfig): Promise<App> {
         { name: 'ap', description: 'Accounts Payable — Bills and Payments' },
         { name: 'reports', description: 'Financial report generation' },
         { name: 'tax', description: 'Tax rates — VAT and WHT configuration' },
+        { name: 'notifications', description: 'In-app notifications' },
+        { name: 'dashboard', description: 'Dashboard and KPI summary' },
+        { name: 'fixed-assets', description: 'Fixed Asset Register — acquisitions, depreciation, disposals' },
+        { name: 'bank', description: 'Bank accounts and reconciliation' },
+        { name: 'wht', description: 'Withholding Tax — certificates and filings' },
+        { name: 'cost-centers', description: 'Cost Center management' },
+        { name: 'profit-centers', description: 'Profit Center management' },
+        { name: 'contacts', description: 'CRM Contacts — customers and vendors' },
+        { name: 'inventory', description: 'Inventory — products, warehouses, stock movements' },
+        { name: 'hr', description: 'Human Resources — employees and departments' },
+        { name: 'payroll', description: 'Payroll processing and payslips' },
+        { name: 'leave', description: 'Leave management — types and requests' },
+        { name: 'audit', description: 'Audit trail and activity logs' },
+        { name: 'import-export', description: 'Bulk data import and export' },
+        { name: 'webhooks', description: 'Webhook registration and management' },
+        { name: 'roles', description: 'Role-based access control — custom roles and permissions' },
+        { name: 'quotations', description: 'Sales quotations' },
+        { name: 'sales-orders', description: 'Sales orders' },
+        { name: 'delivery-notes', description: 'Delivery notes' },
+        { name: 'receipts', description: 'Customer receipts and payments received' },
+        { name: 'credit-notes', description: 'Credit notes and adjustments' },
+        { name: 'purchase-orders', description: 'Purchase orders' },
       ],
     },
   });
@@ -379,6 +417,12 @@ export async function createApp(config: AppConfig): Promise<App> {
   await app.register(errorHandlerPlugin);
 
   // ---------------------------------------------------------------------------
+  // 10b. Plugin: Audit log — automatic mutation audit trail
+  // ---------------------------------------------------------------------------
+
+  await app.register(auditLogPlugin);
+
+  // ---------------------------------------------------------------------------
   // 11. Plugin: Static file serving — Next.js build at apps/web/out
   //
   // Registered after API routes are declared so that /api/** paths are matched
@@ -403,6 +447,7 @@ export async function createApp(config: AppConfig): Promise<App> {
   await app.register(tenantRoutes);
   await app.register(glRoutes);
   await app.register(arRoutes);
+  await app.register(quotationRoutes);
   await app.register(apRoutes);
   await app.register(reportRoutes);
   await app.register(importRoutes);
@@ -414,6 +459,19 @@ export async function createApp(config: AppConfig): Promise<App> {
   await app.register(firmRoutes);
   await app.register(webhookRoutesPlugin);
   await app.register(roleRoutesPlugin);
+  await app.register(auditRoutes);
+  await app.register(inventoryRoutes);
+  await app.register(contactRoutes);
+  await app.register(employeeRoutes);
+  await app.register(payrollRoutes);
+  await app.register(leaveRoutes);
+
+  // Financial Modules (FI-AA, FI-BL, WHT, CO)
+  await app.register(fixedAssetRoutes);
+  await app.register(bankRoutes);
+  await app.register(whtRoutes);
+  await app.register(costCenterRoutes);
+  await app.register(profitCenterRoutes);
 
   // ---------------------------------------------------------------------------
   // 13. 404 fallback — serve Next.js index.html for unrecognised non-API paths

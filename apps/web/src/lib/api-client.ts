@@ -71,12 +71,12 @@ async function refreshAccessToken(): Promise<string | null> {
         return null;
       }
 
-      const data = (await res.json()) as { token: string; refreshToken?: string };
-      setToken(data.token);
+      const data = (await res.json()) as { accessToken: string; refreshToken?: string };
+      setToken(data.accessToken);
       if (data.refreshToken) {
         localStorage.setItem('neip-refresh-token', data.refreshToken);
       }
-      return data.token;
+      return data.accessToken;
     } catch {
       clearTokens();
       return null;
@@ -101,8 +101,12 @@ async function handleResponse<T>(res: Response): Promise<T> {
       // ignore parse errors
     }
 
-    const message = (errorBody['message'] as string | undefined) ?? res.statusText;
-    const code = (errorBody['code'] as string | undefined) ?? 'API_ERROR';
+    const message = (errorBody['detail'] as string | undefined)
+      ?? (errorBody['message'] as string | undefined)
+      ?? res.statusText;
+    const code = (errorBody['code'] as string | undefined)
+      ?? (errorBody['type'] as string | undefined)
+      ?? 'API_ERROR';
 
     throw new AppError(message, code, res.status, errorBody);
   }

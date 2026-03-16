@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -84,7 +84,7 @@ export default function ApAgingPage(): React.JSX.Element {
   const handleGenerate = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.get<ApAgingReport>(`/reports/ap-aging?asOfDate=${asOfDate}`);
+      const data = await api.get<ApAgingReport>('/reports/ap-aging', { asOfDate });
       setReport(data);
     } catch {
       showToast.error('Failed to generate AP Aging report');
@@ -206,9 +206,8 @@ export default function ApAgingPage(): React.JSX.Element {
                   </thead>
                   <tbody>
                     {report.vendors.map((vendor) => (
-                      <>
+                      <React.Fragment key={vendor.vendorId}>
                         <tr
-                          key={vendor.vendorId}
                           className="cursor-pointer border-b border-[var(--color-border)] transition-colors hover:bg-[var(--color-accent)]/30"
                           onClick={() => toggleVendor(vendor.vendorId)}
                         >
@@ -254,7 +253,7 @@ export default function ApAgingPage(): React.JSX.Element {
                             </td>
                           </tr>
                         ))}
-                      </>
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>

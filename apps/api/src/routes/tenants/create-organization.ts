@@ -18,6 +18,7 @@
 
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { ConflictError, API_V1_PREFIX } from '@neip/shared';
+import { toISO } from '../../lib/to-iso.js';
 import { requireAuth } from '../../hooks/require-auth.js';
 
 // ---------------------------------------------------------------------------
@@ -81,8 +82,8 @@ interface TenantRow {
   name: string;
   slug: string;
   settings: unknown;
-  created_at: Date;
-  updated_at: Date;
+  created_at: Date | string;
+  updated_at: Date | string;
 }
 
 // ---------------------------------------------------------------------------
@@ -293,7 +294,7 @@ export async function createOrganizationRoute(
         slug: tenant.slug,
         businessType,
         fiscalYearId,
-        createdAt: tenant.created_at.toISOString(),
+        createdAt: toISO(tenant.created_at),
       });
     },
   );

@@ -34,7 +34,7 @@ interface FiscalYear {
 }
 
 interface FiscalListResponse {
-  data: FiscalYear[];
+  items: FiscalYear[];
 }
 
 // ---------------------------------------------------------------------------
@@ -44,7 +44,7 @@ interface FiscalListResponse {
 export default function FiscalSettingsPage(): React.JSX.Element {
   const router = useRouter();
   const { data, loading, refetch } = useApi<FiscalListResponse>('/settings/fiscal-years');
-  const fiscalYears = data?.data ?? [];
+  const fiscalYears = data?.items ?? [];
 
   // Toggle dialog
   const [toggleTarget, setToggleTarget] = useState<{ type: 'year' | 'period'; id: string; name: string; currentStatus: string } | null>(null);

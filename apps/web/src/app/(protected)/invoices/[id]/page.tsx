@@ -16,28 +16,33 @@ import { DocumentStatus } from '@/components/domain/document-status';
 import type { DocumentStatusValue } from '@/components/domain/document-status';
 
 // ---------------------------------------------------------------------------
-// Types
+// Types — matched to actual API response
 // ---------------------------------------------------------------------------
 
 interface InvoiceLine {
-  id: string;
-  description: string;
-  quantity: number;
+  id?: string;
+  description?: string;
+  quantity?: number;
   /** Unit price in satang */
-  unitPrice: number;
+  unitPriceSatang?: number | string;
   /** Line total in satang */
-  lineTotal: number;
+  amountSatang?: number | string;
 }
 
 interface InvoiceDetail {
   id: string;
-  documentNumber: string;
-  customerName: string;
-  issueDate: string;
+  /** API field name */
+  invoiceNumber: string;
+  customerId: string;
+  createdAt: string;
   dueDate: string;
   status: DocumentStatusValue;
-  /** Total in satang */
-  totalAmount: number;
+  /** Total in satang (may be string from API) */
+  totalSatang: number | string;
+  subTotalSatang?: number | string;
+  vatAmountSatang?: number | string;
+  grandTotalSatang?: number | string;
+  paidSatang?: number | string;
   lines: InvoiceLine[];
   notes?: string;
 }
@@ -59,7 +64,7 @@ export default function InvoiceDetailPage(): React.JSX.Element {
     setVoiding(true);
     try {
       await api.post(`/invoices/${id}/void`);
-      showToast.success(`Invoice ${invoice?.documentNumber ?? ''} voided`);
+      showToast.success(`Invoice ${invoice?.invoiceNumber ?? ''} voided`);
       setShowVoid(false);
       refetch();
     } catch {
@@ -67,7 +72,7 @@ export default function InvoiceDetailPage(): React.JSX.Element {
     } finally {
       setVoiding(false);
     }
-  }, [id, invoice?.documentNumber, refetch]);
+  }, [id, invoice?.invoiceNumber, refetch]);
 
   if (loading) {
     return (
@@ -88,6 +93,9 @@ export default function InvoiceDetailPage(): React.JSX.Element {
     );
   }
 
+  // Use grandTotalSatang if available, otherwise totalSatang
+  const displayTotal = invoice.grandTotalSatang ?? invoice.totalSatang;
+
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 lg:p-6">
       {/* Header */}
@@ -98,7 +106,7 @@ export default function InvoiceDetailPage(): React.JSX.Element {
           </Button>
           <div>
             <h1 className="text-2xl font-semibold text-[var(--color-foreground)]">
-              {invoice.documentNumber}
+              {invoice.invoiceNumber}
             </h1>
             <p className="text-sm text-[var(--color-muted-foreground)]">
               Invoice Detail
@@ -125,18 +133,18 @@ export default function InvoiceDetailPage(): React.JSX.Element {
         <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
             <span className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
-              Customer
+              Customer ID
             </span>
-            <p className="mt-1 text-sm font-medium text-[var(--color-foreground)]">
-              {invoice.customerName}
+            <p className="mt-1 text-sm font-mono font-medium text-[var(--color-foreground)]">
+              {invoice.customerId}
             </p>
           </div>
           <div>
             <span className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
-              Issue Date
+              Created
             </span>
             <p className="mt-1 text-sm text-[var(--color-foreground)]">
-              {new Date(invoice.issueDate).toLocaleDateString('th-TH')}
+              {new Date(invoice.createdAt).toLocaleDateString('th-TH')}
             </p>
           </div>
           <div>
@@ -157,6 +165,40 @@ export default function InvoiceDetailPage(): React.JSX.Element {
           </div>
         </div>
 
+        {/* Summary amounts */}
+        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {invoice.subTotalSatang !== undefined && (
+            <div>
+              <span className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+                Sub Total
+              </span>
+              <div className="mt-1">
+                <MoneyDisplay amount={BigInt(invoice.subTotalSatang)} size="sm" />
+              </div>
+            </div>
+          )}
+          {invoice.vatAmountSatang !== undefined && (
+            <div>
+              <span className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+                VAT
+              </span>
+              <div className="mt-1">
+                <MoneyDisplay amount={BigInt(invoice.vatAmountSatang)} size="sm" />
+              </div>
+            </div>
+          )}
+          {invoice.paidSatang !== undefined && (
+            <div>
+              <span className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+                Paid
+              </span>
+              <div className="mt-1">
+                <MoneyDisplay amount={BigInt(invoice.paidSatang)} size="sm" />
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Line items table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -169,26 +211,42 @@ export default function InvoiceDetailPage(): React.JSX.Element {
               </tr>
             </thead>
             <tbody>
-              {invoice.lines.map((line) => (
-                <tr key={line.id} className="border-b border-[var(--color-border)]">
-                  <td className="px-3 py-2">{line.description}</td>
-                  <td className="px-3 py-2 text-right font-mono-figures">{line.quantity}</td>
-                  <td className="px-3 py-2 text-right">
-                    <MoneyDisplay amount={BigInt(line.unitPrice)} size="sm" />
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    <MoneyDisplay amount={BigInt(line.lineTotal)} size="sm" />
+              {invoice.lines.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-3 py-4 text-center text-[var(--color-muted-foreground)]">
+                    No line items
                   </td>
                 </tr>
-              ))}
+              ) : (
+                invoice.lines.map((line, idx) => (
+                  <tr key={line.id ?? idx} className="border-b border-[var(--color-border)]">
+                    <td className="px-3 py-2">{line.description ?? '—'}</td>
+                    <td className="px-3 py-2 text-right font-mono-figures">{line.quantity ?? 1}</td>
+                    <td className="px-3 py-2 text-right">
+                      {line.unitPriceSatang !== undefined ? (
+                        <MoneyDisplay amount={BigInt(line.unitPriceSatang)} size="sm" />
+                      ) : (
+                        <span className="text-[var(--color-muted-foreground)]">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {line.amountSatang !== undefined ? (
+                        <MoneyDisplay amount={BigInt(line.amountSatang)} size="sm" />
+                      ) : (
+                        <span className="text-[var(--color-muted-foreground)]">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
             <tfoot>
               <tr className="font-medium">
                 <td colSpan={3} className="px-3 py-3 text-right text-[var(--color-foreground)]">
-                  Total
+                  Grand Total
                 </td>
                 <td className="px-3 py-3 text-right">
-                  <MoneyDisplay amount={BigInt(invoice.totalAmount)} size="md" />
+                  <MoneyDisplay amount={BigInt(displayTotal)} size="md" />
                 </td>
               </tr>
             </tfoot>
@@ -211,7 +269,7 @@ export default function InvoiceDetailPage(): React.JSX.Element {
         open={showVoid}
         onOpenChange={setShowVoid}
         title="Void Invoice"
-        description={`Are you sure you want to void ${invoice.documentNumber}? This action cannot be undone.`}
+        description={`Are you sure you want to void ${invoice.invoiceNumber}? This action cannot be undone.`}
         confirmLabel="Void Invoice"
         confirmVariant="destructive"
         onConfirm={handleVoid}

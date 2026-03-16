@@ -43,6 +43,42 @@ function isFastifyValidationError(err: unknown): err is FastifyError & {
   );
 }
 
+/**
+ * Detect postgres.js unique-violation errors (PostgreSQL error code 23505).
+ * These should surface as 409 Conflict rather than 500.
+ */
+function isPostgresUniqueViolation(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null) return false;
+  const e = err as Record<string, unknown>;
+  return e['code'] === '23505';
+}
+
+/**
+ * Detect postgres.js foreign-key violation errors (PostgreSQL error code 23503).
+ * These should surface as 400 Validation Error.
+ */
+function isPostgresFkViolation(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null) return false;
+  const e = err as Record<string, unknown>;
+  return e['code'] === '23503';
+}
+
+/**
+ * Detect postgres.js not-null constraint violation (PostgreSQL error code 23502).
+ */
+function isPostgresNotNullViolation(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null) return false;
+  const e = err as Record<string, unknown>;
+  return e['code'] === '23502';
+}
+
+/** Extract the PostgreSQL DETAIL message from a postgres.js error object. */
+function extractPgDetail(err: unknown): string {
+  if (typeof err !== 'object' || err === null) return '';
+  const e = err as Record<string, unknown>;
+  return typeof e['detail'] === 'string' ? e['detail'] : '';
+}
+
 async function errorHandlerPlugin(fastify: FastifyInstance): Promise<void> {
   fastify.setErrorHandler((err, request, reply) => {
     const requestId =
@@ -87,6 +123,67 @@ async function errorHandlerPlugin(fastify: FastifyInstance): Promise<void> {
         .status(400)
         .header('Content-Type', CONTENT_TYPE_PROBLEM_JSON)
         .send(body);
+      return;
+    }
+
+    // --- PostgreSQL unique constraint violation → 409 Conflict -----------------
+    if (isPostgresUniqueViolation(err)) {
+      const pgDetail = extractPgDetail(err);
+      const detail = pgDetail
+        ? `Duplicate entry: ${pgDetail}`
+        : 'A record with this value already exists.';
+      const body = toErrorResponse({
+        type: 'https://problems.neip.app/conflict',
+        title: 'Conflict',
+        status: 409,
+        detail,
+        instance: request.url,
+      });
+      request.log.warn(
+        { err, requestId, url: request.url, statusCode: 409 },
+        'PostgresUniqueViolation',
+      );
+      void reply.status(409).header('Content-Type', CONTENT_TYPE_PROBLEM_JSON).send(body);
+      return;
+    }
+
+    // --- PostgreSQL foreign-key violation → 400 Validation Error ---------------
+    if (isPostgresFkViolation(err)) {
+      const pgDetail = extractPgDetail(err);
+      const body = toErrorResponse({
+        type: 'https://problems.neip.app/validation-error',
+        title: 'Validation Error',
+        status: 400,
+        detail: pgDetail
+          ? `Referenced record not found: ${pgDetail}`
+          : 'A referenced record does not exist.',
+        instance: request.url,
+      });
+      request.log.warn(
+        { err, requestId, url: request.url, statusCode: 400 },
+        'PostgresFkViolation',
+      );
+      void reply.status(400).header('Content-Type', CONTENT_TYPE_PROBLEM_JSON).send(body);
+      return;
+    }
+
+    // --- PostgreSQL not-null violation → 400 Validation Error ------------------
+    if (isPostgresNotNullViolation(err)) {
+      const pgDetail = extractPgDetail(err);
+      const body = toErrorResponse({
+        type: 'https://problems.neip.app/validation-error',
+        title: 'Validation Error',
+        status: 400,
+        detail: pgDetail
+          ? `Required field missing: ${pgDetail}`
+          : 'A required field is missing.',
+        instance: request.url,
+      });
+      request.log.warn(
+        { err, requestId, url: request.url, statusCode: 400 },
+        'PostgresNotNullViolation',
+      );
+      void reply.status(400).header('Content-Type', CONTENT_TYPE_PROBLEM_JSON).send(body);
       return;
     }
 

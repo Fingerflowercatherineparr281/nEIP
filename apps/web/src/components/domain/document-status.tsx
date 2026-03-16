@@ -26,7 +26,13 @@ export type DocumentStatusValue =
   | 'rejected'
   | 'voided'
   | 'paid'
-  | 'partial';
+  | 'partial'
+  | 'sent'
+  | 'confirmed'
+  | 'partial_received'
+  | 'received'
+  | 'cancelled'
+  | 'issued';
 
 export type DocumentStatusSize = 'sm' | 'md' | 'lg';
 
@@ -100,6 +106,42 @@ const STATUS_CONFIG: Record<DocumentStatusValue, StatusConfig> = {
     colorClasses:
       'bg-[var(--color-hitl-review-bg)] text-[var(--color-hitl-review-foreground)] border-[var(--color-hitl-review)]',
     Icon: CircleDot,
+  },
+  sent: {
+    label: 'Sent',
+    colorClasses:
+      'bg-[var(--color-primary-100)] text-[var(--color-primary-700)] border-[var(--color-primary-300)]',
+    Icon: Send,
+  },
+  confirmed: {
+    label: 'Confirmed',
+    colorClasses:
+      'bg-[var(--color-hitl-auto-bg)] text-[var(--color-hitl-auto-foreground)] border-[var(--color-hitl-auto)]',
+    Icon: CheckCircle2,
+  },
+  partial_received: {
+    label: 'Partial Received',
+    colorClasses:
+      'bg-[var(--color-hitl-review-bg)] text-[var(--color-hitl-review-foreground)] border-[var(--color-hitl-review)]',
+    Icon: CircleDot,
+  },
+  received: {
+    label: 'Received',
+    colorClasses:
+      'bg-[var(--color-hitl-auto-bg)] text-[var(--color-hitl-auto-foreground)] border-[var(--color-hitl-auto)]',
+    Icon: CheckCircle2,
+  },
+  cancelled: {
+    label: 'Cancelled',
+    colorClasses:
+      'bg-[var(--color-hitl-blocked-bg)] text-[var(--color-hitl-blocked)] border-[var(--color-hitl-blocked)]',
+    Icon: Ban,
+  },
+  issued: {
+    label: 'Issued',
+    colorClasses:
+      'bg-[var(--color-primary-100)] text-[var(--color-primary-700)] border-[var(--color-primary-300)]',
+    Icon: Send,
   },
 };
 

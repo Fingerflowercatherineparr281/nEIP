@@ -11,6 +11,7 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { NotFoundError, ConflictError, ValidationError, API_V1_PREFIX } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
+import { toISO } from '../../lib/to-iso.js';
 import { requirePermission } from '../../hooks/require-permission.js';
 import { GL_PERIOD_READ, GL_PERIOD_CLOSE } from '../../lib/permissions.js';
 
@@ -84,9 +85,10 @@ interface FiscalYearRow {
   year: number;
   start_date: string;
   end_date: string;
+  status: string;
   tenant_id: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at: Date | string;
+  updated_at: Date | string;
 }
 
 interface FiscalPeriodRow {
@@ -96,8 +98,8 @@ interface FiscalPeriodRow {
   start_date: string;
   end_date: string;
   status: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at: Date | string;
+  updated_at: Date | string;
 }
 
 // ---------------------------------------------------------------------------
@@ -153,7 +155,7 @@ export async function fiscalRoutes(
             endDate: p.end_date,
             status: p.status,
           })),
-          createdAt: fy.created_at.toISOString(),
+          createdAt: toISO(fy.created_at),
         });
       }
 
@@ -236,7 +238,7 @@ export async function fiscalRoutes(
         startDate: fy.start_date,
         endDate: fy.end_date,
         periods: createdPeriods,
-        createdAt: fy.created_at.toISOString(),
+        createdAt: toISO(fy.created_at),
       });
     },
   );
@@ -299,7 +301,7 @@ export async function fiscalRoutes(
         startDate: period.start_date,
         endDate: period.end_date,
         status: period.status,
-        updatedAt: period.updated_at.toISOString(),
+        updatedAt: toISO(period.updated_at),
       });
     },
   );
@@ -360,7 +362,81 @@ export async function fiscalRoutes(
         startDate: period.start_date,
         endDate: period.end_date,
         status: period.status,
-        updatedAt: period.updated_at.toISOString(),
+        updatedAt: toISO(period.updated_at),
+      });
+    },
+  );
+
+  // POST /api/v1/fiscal-years/:id/close
+  fastify.post<{ Params: IdParams }>(
+    `${API_V1_PREFIX}/fiscal-years/:id/close`,
+    {
+      schema: {
+        description: 'Close a fiscal year (requires all periods to be closed)',
+        tags: ['gl'],
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: 'object',
+          required: ['id'],
+          properties: { id: { type: 'string' } },
+        },
+        response: { 200: { description: 'Fiscal year closed', ...fiscalYearResponseSchema } },
+      },
+      preHandler: [requireAuth, requirePermission(GL_PERIOD_CLOSE)],
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      const { tenantId } = request.user;
+
+      // Check fiscal year exists and belongs to tenant
+      const fyRows = await fastify.sql<[FiscalYearRow?]>`
+        SELECT * FROM fiscal_years WHERE id = ${id} AND tenant_id = ${tenantId} LIMIT 1
+      `;
+      const fy = fyRows[0];
+      if (!fy) {
+        throw new NotFoundError({ detail: `Fiscal year ${id} not found.` });
+      }
+
+      // Check for open periods
+      const openPeriods = await fastify.sql<[{ count: string }?]>`
+        SELECT count(*)::text as count FROM fiscal_periods
+        WHERE fiscal_year_id = ${id} AND status = 'open'
+      `;
+      const openCount = parseInt(openPeriods[0]?.count ?? '0', 10);
+      if (openCount > 0) {
+        throw new ConflictError({
+          detail: `Cannot close fiscal year — there are still ${String(openCount)} open periods.`,
+        });
+      }
+
+      // Close the year
+      const updatedRows = await fastify.sql<[FiscalYearRow?]>`
+        UPDATE fiscal_years SET status = 'closed', updated_at = NOW()
+        WHERE id = ${id} AND tenant_id = ${tenantId}
+        RETURNING *
+      `;
+      const updated = updatedRows[0];
+      if (!updated) throw new NotFoundError({ detail: `Fiscal year ${id} not found.` });
+
+      const periods = await fastify.sql<FiscalPeriodRow[]>`
+        SELECT * FROM fiscal_periods WHERE fiscal_year_id = ${id} ORDER BY period_number ASC
+      `;
+
+      request.log.info({ fiscalYearId: id, tenantId }, 'Fiscal year closed');
+
+      return reply.status(200).send({
+        id: updated.id,
+        year: updated.year,
+        startDate: updated.start_date,
+        endDate: updated.end_date,
+        periods: periods.map((p) => ({
+          id: p.id,
+          periodNumber: p.period_number,
+          startDate: p.start_date,
+          endDate: p.end_date,
+          status: p.status,
+        })),
+        createdAt: toISO(updated.created_at),
       });
     },
   );

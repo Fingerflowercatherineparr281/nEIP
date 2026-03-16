@@ -11,6 +11,7 @@ import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { NotFoundError, ForbiddenError, API_V1_PREFIX } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
 import { requirePermission } from '../../hooks/require-permission.js';
+import { toISO } from '../../lib/to-iso.js';
 import { USER_UPDATE } from '../../lib/permissions.js';
 
 // ---------------------------------------------------------------------------
@@ -65,7 +66,7 @@ interface TenantRow {
   name: string;
   slug: string;
   settings: unknown;
-  updated_at: Date;
+  updated_at: Date | string;
 }
 
 // ---------------------------------------------------------------------------
@@ -166,7 +167,7 @@ export async function updateOrganizationRoute(
         name: row.name,
         slug: row.slug,
         settings: row.settings,
-        updatedAt: row.updated_at.toISOString(),
+        updatedAt: toISO(row.updated_at),
       });
     },
   );

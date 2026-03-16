@@ -8,9 +8,10 @@
  */
 
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
-import { NotFoundError, API_V1_PREFIX } from '@neip/shared';
+import { NotFoundError, ValidationError, API_V1_PREFIX } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
 import { requirePermission } from '../../hooks/require-permission.js';
+import { toISO } from '../../lib/to-iso.js';
 import {
   AP_PAYMENT_CREATE,
   AP_PAYMENT_READ,
@@ -22,7 +23,7 @@ import {
 
 const createBillPaymentBodySchema = {
   type: 'object',
-  required: ['billId', 'amountSatang', 'paymentDate', 'paymentMethod', 'apAccountId', 'cashAccountId'],
+  required: ['billId', 'amountSatang', 'paymentDate', 'paymentMethod'],
   additionalProperties: false,
   properties: {
     billId: { type: 'string', description: 'Bill ID to pay' },
@@ -33,8 +34,8 @@ const createBillPaymentBodySchema = {
       enum: ['cash', 'bank_transfer', 'cheque', 'promptpay'],
       description: 'Payment method',
     },
-    apAccountId: { type: 'string', description: 'AP account to debit' },
-    cashAccountId: { type: 'string', description: 'Cash/Bank account to credit' },
+    apAccountId: { type: 'string', description: 'AP account to debit (optional)' },
+    cashAccountId: { type: 'string', description: 'Cash/Bank account to credit (optional)' },
     reference: { type: 'string', maxLength: 255, description: 'External reference number' },
     notes: { type: 'string', maxLength: 2000 },
   },
@@ -76,8 +77,8 @@ interface CreateBillPaymentBody {
   amountSatang: string;
   paymentDate: string;
   paymentMethod: string;
-  apAccountId: string;
-  cashAccountId: string;
+  apAccountId?: string;
+  cashAccountId?: string;
   reference?: string;
   notes?: string;
 }
@@ -91,6 +92,32 @@ interface BillPaymentListQuery {
 
 interface IdParams {
   id: string;
+}
+
+interface BillPaymentRow {
+  id: string;
+  document_number: string;
+  bill_id: string;
+  amount_satang: bigint;
+  payment_date: string;
+  payment_method: string;
+  reference: string | null;
+  notes: string | null;
+  journal_entry_id: string | null;
+  tenant_id: string;
+  created_by: string;
+  created_at: Date | string;
+}
+
+interface BillRow {
+  id: string;
+  total_satang: bigint;
+  paid_satang: bigint;
+  status: string;
+}
+
+interface CountRow {
+  count: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -122,14 +149,44 @@ export async function billPaymentRoutes(
       } = request.body;
       const { tenantId, sub: userId } = request.user;
 
+      // Verify bill exists.
+      const billRows = await fastify.sql<[BillRow?]>`
+        SELECT id, total_satang, paid_satang, status FROM bills WHERE id = ${billId} AND tenant_id = ${tenantId} LIMIT 1
+      `;
+      const bill = billRows[0];
+      if (!bill) {
+        throw new NotFoundError({ detail: `Bill ${billId} not found.` });
+      }
+
+      const amountBigInt = BigInt(amountSatang);
+      const currentPaid = BigInt(bill.paid_satang);
+      const totalSatang = BigInt(bill.total_satang);
+
+      // Overpayment check
+      if (currentPaid + amountBigInt > totalSatang) {
+        throw new ValidationError({
+          detail: `Payment amount ${amountSatang} exceeds outstanding balance ${(totalSatang - currentPaid).toString()} satang.`,
+        });
+      }
+
       const paymentId = crypto.randomUUID();
       const documentNumber = `PMT-${Date.now()}`;
 
-      // TODO: Use bill payment service tool when wired up.
-      request.log.info(
-        { paymentId, documentNumber, billId, tenantId, userId },
-        'Bill payment recorded (stub)',
-      );
+      await fastify.sql`
+        INSERT INTO bill_payments (id, document_number, bill_id, amount_satang, payment_date, payment_method, reference, notes, tenant_id, created_by)
+        VALUES (${paymentId}, ${documentNumber}, ${billId}, ${amountBigInt.toString()}::bigint, ${paymentDate}, ${paymentMethod}, ${reference ?? null}, ${notes ?? null}, ${tenantId}, ${userId})
+      `;
+
+      // Update bill paid_satang and status.
+      const newPaid = currentPaid + amountBigInt;
+      const newStatus = newPaid >= bill.total_satang ? 'paid' : 'partial';
+
+      await fastify.sql`
+        UPDATE bills SET paid_satang = ${newPaid.toString()}::bigint, status = ${newStatus}, updated_at = NOW()
+        WHERE id = ${billId} AND tenant_id = ${tenantId}
+      `;
+
+      request.log.info({ paymentId, documentNumber, billId, tenantId, userId }, 'Bill payment recorded');
 
       return reply.status(201).send({
         id: paymentId,
@@ -141,7 +198,7 @@ export async function billPaymentRoutes(
         reference: reference ?? null,
         notes: notes ?? null,
         journalEntryId: null,
-        billStatus: 'partial',
+        billStatus: newStatus,
         createdAt: new Date().toISOString(),
       });
     },
@@ -175,18 +232,48 @@ export async function billPaymentRoutes(
       preHandler: [requireAuth, requirePermission(AP_PAYMENT_READ)],
     },
     async (request, reply) => {
+      const { tenantId } = request.user;
       const limit = request.query.limit ?? 20;
       const offset = request.query.offset ?? 0;
+      const { billId } = request.query;
 
-      request.log.debug({ tenantId: request.user.tenantId }, 'Listing bill payments (stub)');
+      let countRows: CountRow[];
+      let payments: BillPaymentRow[];
 
-      return reply.status(200).send({
-        items: [],
-        total: 0,
-        limit,
-        offset,
-        hasMore: false,
-      });
+      if (billId !== undefined) {
+        countRows = await fastify.sql<CountRow[]>`
+          SELECT COUNT(*)::text as count FROM bill_payments WHERE tenant_id = ${tenantId} AND bill_id = ${billId}
+        `;
+        payments = await fastify.sql<BillPaymentRow[]>`
+          SELECT * FROM bill_payments WHERE tenant_id = ${tenantId} AND bill_id = ${billId}
+          ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}
+        `;
+      } else {
+        countRows = await fastify.sql<CountRow[]>`
+          SELECT COUNT(*)::text as count FROM bill_payments WHERE tenant_id = ${tenantId}
+        `;
+        payments = await fastify.sql<BillPaymentRow[]>`
+          SELECT * FROM bill_payments WHERE tenant_id = ${tenantId}
+          ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}
+        `;
+      }
+
+      const total = parseInt(countRows[0]?.count ?? '0', 10);
+      const items = payments.map((p) => ({
+        id: p.id,
+        documentNumber: p.document_number,
+        billId: p.bill_id,
+        amountSatang: p.amount_satang.toString(),
+        paymentDate: p.payment_date,
+        paymentMethod: p.payment_method,
+        reference: p.reference,
+        notes: p.notes,
+        journalEntryId: p.journal_entry_id,
+        billStatus: 'paid',
+        createdAt: toISO(p.created_at),
+      }));
+
+      return reply.status(200).send({ items, total, limit, offset, hasMore: offset + limit < total });
     },
   );
 
@@ -209,14 +296,30 @@ export async function billPaymentRoutes(
       },
       preHandler: [requireAuth, requirePermission(AP_PAYMENT_READ)],
     },
-    async (request, _reply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const { tenantId } = request.user;
 
-      request.log.debug({ paymentId: id, tenantId }, 'Get bill payment detail (stub)');
+      const rows = await fastify.sql<[BillPaymentRow?]>`
+        SELECT * FROM bill_payments WHERE id = ${id} AND tenant_id = ${tenantId} LIMIT 1
+      `;
+      const payment = rows[0];
+      if (!payment) {
+        throw new NotFoundError({ detail: `Bill payment ${id} not found.` });
+      }
 
-      throw new NotFoundError({
-        detail: `Bill payment ${id} not found. (AP bill_payments table not yet available)`,
+      return reply.status(200).send({
+        id: payment.id,
+        documentNumber: payment.document_number,
+        billId: payment.bill_id,
+        amountSatang: payment.amount_satang.toString(),
+        paymentDate: payment.payment_date,
+        paymentMethod: payment.payment_method,
+        reference: payment.reference,
+        notes: payment.notes,
+        journalEntryId: payment.journal_entry_id,
+        billStatus: 'posted',
+        createdAt: toISO(payment.created_at),
       });
     },
   );

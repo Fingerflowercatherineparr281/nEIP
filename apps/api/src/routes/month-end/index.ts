@@ -11,6 +11,7 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { API_V1_PREFIX } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
+import { toISO } from '../../lib/to-iso.js';
 import { requirePermission } from '../../hooks/require-permission.js';
 
 // ---------------------------------------------------------------------------
@@ -139,19 +140,22 @@ export async function monthEndRoutes(
 
       // Insert a job tracking record
       await fastify.sql`
-        INSERT INTO domain_events (id, tenant_id, event_type, payload, created_at)
+        INSERT INTO domain_events (id, type, aggregate_id, aggregate_type, tenant_id, payload, version, fiscal_year)
         VALUES (
           ${jobId},
-          ${tenantId},
           ${'month-end.close.queued'},
+          ${jobId},
+          ${'month-end-job'},
+          ${tenantId},
           ${JSON.stringify({
             fiscalYear,
             fiscalPeriod,
             initiatedBy: userId,
             correlationId,
             tenantId,
-          })},
-          NOW()
+          })}::jsonb,
+          1,
+          ${fiscalYear}
         )
       `;
 
@@ -199,11 +203,11 @@ export async function monthEndRoutes(
       // Look up the job tracking record
       const eventRows = await fastify.sql<[{
         id: string;
-        event_type: string;
+        type: string;
         payload: unknown;
-        created_at: Date;
+        timestamp: Date | string;
       }?]>`
-        SELECT id, event_type, payload, created_at
+        SELECT id, type, payload, timestamp
         FROM domain_events
         WHERE id = ${jobId}
           AND tenant_id = ${tenantId}
@@ -224,14 +228,14 @@ export async function monthEndRoutes(
       const completionRows = await fastify.sql<[{
         id: string;
         payload: unknown;
-        created_at: Date;
+        timestamp: Date | string;
       }?]>`
-        SELECT id, payload, created_at
+        SELECT id, payload, timestamp
         FROM domain_events
-        WHERE event_type = ${'month-end.close.completed'}
+        WHERE type = ${'month-end.close.completed'}
           AND tenant_id = ${tenantId}
-          AND (payload::jsonb ->> 'jobId') = ${jobId}
-        ORDER BY created_at DESC
+          AND (payload ->> 'jobId') = ${jobId}
+        ORDER BY timestamp DESC
         LIMIT 1
       `;
 
@@ -242,8 +246,8 @@ export async function monthEndRoutes(
           jobId,
           state: 'completed',
           data: completion.payload,
-          createdOn: event.created_at.toISOString(),
-          completedOn: completion.created_at.toISOString(),
+          createdOn: toISO(event.timestamp),
+          completedOn: toISO(completion.timestamp),
         });
       }
 
@@ -251,14 +255,14 @@ export async function monthEndRoutes(
       const errorRows = await fastify.sql<[{
         id: string;
         payload: unknown;
-        created_at: Date;
+        timestamp: Date | string;
       }?]>`
-        SELECT id, payload, created_at
+        SELECT id, payload, timestamp
         FROM domain_events
-        WHERE event_type = ${'month-end.close.failed'}
+        WHERE type = ${'month-end.close.failed'}
           AND tenant_id = ${tenantId}
-          AND (payload::jsonb ->> 'jobId') = ${jobId}
-        ORDER BY created_at DESC
+          AND (payload ->> 'jobId') = ${jobId}
+        ORDER BY timestamp DESC
         LIMIT 1
       `;
 
@@ -269,8 +273,8 @@ export async function monthEndRoutes(
           jobId,
           state: 'failed',
           data: errorEvent.payload,
-          createdOn: event.created_at.toISOString(),
-          completedOn: errorEvent.created_at.toISOString(),
+          createdOn: toISO(event.timestamp),
+          completedOn: toISO(errorEvent.timestamp),
         });
       }
 
@@ -279,7 +283,7 @@ export async function monthEndRoutes(
         jobId,
         state: 'processing',
         data: event.payload,
-        createdOn: event.created_at.toISOString(),
+        createdOn: toISO(event.timestamp),
       });
     },
   );

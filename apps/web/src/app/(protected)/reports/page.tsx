@@ -4,6 +4,7 @@ import {
   BarChart3,
   ClipboardList,
   FileSpreadsheet,
+  GitCompare,
   Scale,
   TrendingUp,
   Users,
@@ -58,6 +59,12 @@ const REPORTS: ReportLink[] = [
     description: 'Outstanding vendor bills by aging bucket (Current, 1-30, 31-60, 61-90, >90 days)',
     href: '/reports/ap-aging',
     icon: ClipboardList,
+  },
+  {
+    title: 'P&L Comparison',
+    description: 'Monthly, YTD, year-over-year, and month-over-month profit & loss comparison views',
+    href: '/reports/pnl',
+    icon: GitCompare,
   },
 ];
 

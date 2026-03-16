@@ -10,7 +10,6 @@ import {
   TrendingDown,
   DollarSign,
   Receipt,
-  ClipboardCheck,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -21,15 +20,37 @@ import { queryKeys } from '@/lib/query-client';
 import { useAuthStore } from '@/stores/auth-store';
 
 // ---------------------------------------------------------------------------
-// Types
+// Types — matched to actual API: GET /api/v1/dashboard/executive
 // ---------------------------------------------------------------------------
 
-interface DashboardMetrics {
-  totalRevenue: string;     // satang as string
-  totalExpenses: string;
-  netIncome: string;
-  outstandingAR: string;
-  pendingApprovals: number;
+interface AmountWithCurrency {
+  amountSatang: string;
+  currency: string;
+}
+
+interface ExecutiveDashboard {
+  period: string;
+  startDate: string;
+  endDate: string;
+  generatedAt: string;
+  totalRevenue: AmountWithCurrency;
+  totalExpenses: AmountWithCurrency;
+  cashFlow: {
+    inflow: AmountWithCurrency;
+    outflow: AmountWithCurrency;
+    net: AmountWithCurrency;
+  };
+  arAging: {
+    current: AmountWithCurrency;
+    days1to30: AmountWithCurrency;
+    days31to60: AmountWithCurrency;
+    days61to90: AmountWithCurrency;
+    over90: AmountWithCurrency;
+    total: AmountWithCurrency;
+  };
+  revenueTrend: Array<{ month: string; revenue: AmountWithCurrency }>;
+  expenseBreakdown: Array<{ category: string; amount: AmountWithCurrency }>;
+  budgetUtilization: Array<{ accountId: string; budgeted: AmountWithCurrency; actual: AmountWithCurrency }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -64,9 +85,9 @@ export default function DashboardPage(): React.JSX.Element {
   const user = useAuthStore((s) => s.user);
   const tenantId = useAuthStore((s) => s.tenantId) ?? 'default';
 
-  const { data: metrics, isLoading } = useQuery<DashboardMetrics>({
+  const { data: dashboard, isLoading } = useQuery<ExecutiveDashboard>({
     queryKey: queryKeys.dashboardMetrics(tenantId),
-    queryFn: () => api.get<DashboardMetrics>('/reports/dashboard'),
+    queryFn: () => api.get<ExecutiveDashboard>('/dashboard/executive'),
   });
 
   const today = new Date().toLocaleDateString('th-TH', {
@@ -96,38 +117,72 @@ export default function DashboardPage(): React.JSX.Element {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <MetricCard label="Total Revenue (MTD)" icon={TrendingUp}>
             <MoneyDisplay
-              amount={BigInt(metrics?.totalRevenue ?? '0')}
+              amount={BigInt(dashboard?.totalRevenue?.amountSatang ?? '0')}
               size="lg"
             />
           </MetricCard>
 
           <MetricCard label="Total Expenses (MTD)" icon={TrendingDown}>
             <MoneyDisplay
-              amount={BigInt(metrics?.totalExpenses ?? '0')}
+              amount={BigInt(dashboard?.totalExpenses?.amountSatang ?? '0')}
               size="lg"
             />
           </MetricCard>
 
-          <MetricCard label="Net Income" icon={DollarSign}>
+          <MetricCard label="Net Cash Flow" icon={DollarSign}>
             <MoneyDisplay
-              amount={BigInt(metrics?.netIncome ?? '0')}
+              amount={BigInt(dashboard?.cashFlow?.net?.amountSatang ?? '0')}
               size="lg"
               showSign
             />
           </MetricCard>
 
-          <MetricCard label="Outstanding AR" icon={Receipt}>
+          <MetricCard label="Outstanding AR (Total)" icon={Receipt}>
             <MoneyDisplay
-              amount={BigInt(metrics?.outstandingAR ?? '0')}
+              amount={BigInt(dashboard?.arAging?.total?.amountSatang ?? '0')}
               size="lg"
             />
           </MetricCard>
 
-          <MetricCard label="Pending Approvals" icon={ClipboardCheck}>
-            <span className="text-lg font-semibold text-foreground">
-              {metrics?.pendingApprovals ?? 0}
-            </span>
+          <MetricCard label="Cash Inflow" icon={TrendingUp}>
+            <MoneyDisplay
+              amount={BigInt(dashboard?.cashFlow?.inflow?.amountSatang ?? '0')}
+              size="lg"
+            />
           </MetricCard>
+
+          <MetricCard label="Cash Outflow" icon={TrendingDown}>
+            <MoneyDisplay
+              amount={BigInt(dashboard?.cashFlow?.outflow?.amountSatang ?? '0')}
+              size="lg"
+            />
+          </MetricCard>
+        </div>
+      )}
+
+      {/* AR Aging breakdown */}
+      {!isLoading && dashboard?.arAging && (
+        <div className="mt-6">
+          <h2 className="mb-3 text-lg font-semibold text-foreground">AR Aging</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            {[
+              { label: 'Current', key: 'current' as const },
+              { label: '1-30 days', key: 'days1to30' as const },
+              { label: '31-60 days', key: 'days31to60' as const },
+              { label: '61-90 days', key: 'days61to90' as const },
+              { label: '90+ days', key: 'over90' as const },
+            ].map(({ label, key }) => (
+              <div key={key} className="rounded-lg border border-border bg-card p-3">
+                <p className="text-xs text-muted-foreground">{label}</p>
+                <div className="mt-1">
+                  <MoneyDisplay
+                    amount={BigInt(dashboard.arAging[key]?.amountSatang ?? '0')}
+                    size="sm"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

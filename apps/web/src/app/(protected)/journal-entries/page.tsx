@@ -21,17 +21,22 @@ import { useAuthStore } from '@/stores/auth-store';
 // Types
 // ---------------------------------------------------------------------------
 
+interface JournalEntryLine {
+  debitSatang?: number;
+  creditSatang?: number;
+}
+
 interface JournalEntry {
   id: string;
-  docNumber: string;
-  date: string;
-  memo: string;
-  totalAmount: string; // satang as string
+  documentNumber: string;
+  createdAt: string;
+  description: string;
+  lines: JournalEntryLine[];
   status: DocumentStatusValue;
 }
 
 interface JournalEntryListResponse {
-  data: JournalEntry[];
+  items: JournalEntry[];
   total: number;
 }
 
@@ -71,7 +76,7 @@ export default function JournalEntriesPage(): React.JSX.Element {
     queryFn: () => api.get<JournalEntryListResponse>('/journal-entries', filters),
   });
 
-  const entries = data?.data ?? [];
+  const entries = data?.items ?? [];
 
   // Post mutation
   const postMutation = useMutation({
@@ -161,15 +166,20 @@ export default function JournalEntriesPage(): React.JSX.Element {
                       onClick={() => router.push(`/journal-entries/${entry.id}`)}
                       className="text-primary hover:underline"
                     >
-                      {entry.docNumber}
+                      {entry.documentNumber}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{formatDate(entry.date)}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{formatDate(entry.createdAt)}</td>
                   <td className="hidden max-w-[200px] truncate px-4 py-3 text-muted-foreground md:table-cell">
-                    {entry.memo || '-'}
+                    {entry.description || '-'}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(entry.totalAmount)} size="sm" />
+                    <MoneyDisplay
+                      amount={BigInt(
+                        entry.lines.reduce((sum, l) => sum + (l.debitSatang ?? 0), 0),
+                      )}
+                      size="sm"
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <DocumentStatus status={entry.status} size="sm" />
@@ -181,7 +191,7 @@ export default function JournalEntriesPage(): React.JSX.Element {
                           variant="ghost"
                           size="sm"
                           onClick={() => setPostTarget(entry)}
-                          aria-label={`Post ${entry.docNumber}`}
+                          aria-label={`Post ${entry.documentNumber}`}
                         >
                           <Send className="h-3.5 w-3.5" />
                         </Button>
@@ -191,7 +201,7 @@ export default function JournalEntriesPage(): React.JSX.Element {
                           variant="ghost"
                           size="sm"
                           onClick={() => setReverseTarget(entry)}
-                          aria-label={`Reverse ${entry.docNumber}`}
+                          aria-label={`Reverse ${entry.documentNumber}`}
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
                         </Button>
@@ -212,7 +222,7 @@ export default function JournalEntriesPage(): React.JSX.Element {
           if (!open) setPostTarget(null);
         }}
         title="Post Journal Entry"
-        description={`Post ${postTarget?.docNumber ?? ''} to the general ledger? This will update account balances.`}
+        description={`Post ${postTarget?.documentNumber ?? ''} to the general ledger? This will update account balances.`}
         confirmLabel="Post"
         confirmVariant="primary"
         onConfirm={() => {
@@ -228,7 +238,7 @@ export default function JournalEntriesPage(): React.JSX.Element {
           if (!open) setReverseTarget(null);
         }}
         title="Reverse Journal Entry"
-        description={`Create a reversing entry for ${reverseTarget?.docNumber ?? ''}? This will create a new entry with opposite debits and credits.`}
+        description={`Create a reversing entry for ${reverseTarget?.documentNumber ?? ''}? This will create a new entry with opposite debits and credits.`}
         confirmLabel="Reverse"
         confirmVariant="destructive"
         onConfirm={() => {

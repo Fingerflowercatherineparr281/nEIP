@@ -148,24 +148,9 @@ export async function importRoutes(
       // For now we store the base64 content in the job payload (suitable for files < 5MB)
       const fileRef = fileBuffer.toString('base64');
 
-      // Queue the import job via pg-boss
-      const jobId = await fastify.db.execute(
-        // We queue via pg-boss's send function through the SQL client
-        // In a real setup, the API would have access to the pg-boss instance
-        // For now, we insert directly into the pgboss.job table
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        undefined as any,
-      ).catch(() => {
-        // Fallback: generate a job ID and rely on the worker polling
-        return crypto.randomUUID();
-      });
-
-      // In production, use the pg-boss client directly:
-      // const jobId = await boss.send(JOB_NAMES.CSV_IMPORT, { tenantId, fileRef, importType, initiatedBy: user.sub });
-
-      // For the MVP, we'll store the import data in a simple in-memory store
-      // and return a job ID. The worker handler will process it.
-      const generatedJobId = typeof jobId === 'string' ? jobId : crypto.randomUUID();
+      // In production this would call boss.send() to queue a real pg-boss job.
+      // For the MVP we generate a UUID and track state in-memory.
+      const generatedJobId = crypto.randomUUID();
 
       // Store import metadata for the status endpoint
       importJobStore.set(generatedJobId, {

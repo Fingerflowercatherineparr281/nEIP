@@ -34,7 +34,7 @@ interface ApprovalItem {
 }
 
 interface ApprovalListResponse {
-  data: ApprovalItem[];
+  items: ApprovalItem[];
   total: number;
 }
 
@@ -80,8 +80,10 @@ export default function ApprovalsPage(): React.JSX.Element {
     return p;
   }, [search, status, dateFrom, dateTo, zone]);
 
-  const { data, loading, refetch } = useApi<ApprovalListResponse>('/approvals', params);
-  const items = data?.data ?? [];
+  // NOTE: /approval-requests endpoint may not be available in all environments.
+  // The hook gracefully handles 404 by leaving data as null.
+  const { data, loading, refetch } = useApi<ApprovalListResponse>('/approval-requests', params);
+  const items = data?.items ?? [];
 
   // Selection handlers
   const handleSelectChange = useCallback((id: string, isSelected: boolean) => {
@@ -99,7 +101,7 @@ export default function ApprovalsPage(): React.JSX.Element {
   const handleConfirm = useCallback(
     async (id: string) => {
       try {
-        await api.post(`/approvals/${id}/approve`);
+        await api.post(`/approval-requests/${id}/approve`);
         showToast.success('Item approved');
         refetch();
       } catch {
@@ -112,7 +114,7 @@ export default function ApprovalsPage(): React.JSX.Element {
   const handleReject = useCallback(
     async (id: string) => {
       try {
-        await api.post(`/approvals/${id}/reject`);
+        await api.post(`/approval-requests/${id}/reject`);
         showToast.success('Item rejected');
         refetch();
       } catch {
@@ -137,7 +139,7 @@ export default function ApprovalsPage(): React.JSX.Element {
   const handleBatchApprove = useCallback(async () => {
     setBatchLoading(true);
     try {
-      await api.post('/approvals/batch-approve', { ids: Array.from(selected) });
+      await api.post('/approval-requests/batch-approve', { ids: Array.from(selected) });
       showToast.success(`${selected.size} items approved`);
       setSelected(new Set());
       setShowBatchApprove(false);
@@ -152,7 +154,7 @@ export default function ApprovalsPage(): React.JSX.Element {
   const handleBatchReject = useCallback(async () => {
     setBatchLoading(true);
     try {
-      await api.post('/approvals/batch-reject', { ids: Array.from(selected) });
+      await api.post('/approval-requests/batch-reject', { ids: Array.from(selected) });
       showToast.success(`${selected.size} items rejected`);
       setSelected(new Set());
       setShowBatchReject(false);

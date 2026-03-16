@@ -21,18 +21,19 @@ import { CreditCard } from 'lucide-react';
 
 interface Payment {
   id: string;
-  reference: string;
-  payerName: string;
+  paymentNumber: string;
+  customerId: string;
   /** Amount in satang */
-  amount: number;
-  date: string;
+  amountSatang: number;
+  paymentDate: string;
+  paymentMethod: string;
+  reference: string | null;
   status: DocumentStatusValue;
-  matchedInvoiceRef?: string;
-  matchedInvoiceId?: string;
+  invoiceId: string | null;
 }
 
 interface PaymentListResponse {
-  data: Payment[];
+  items: Payment[];
   total: number;
 }
 
@@ -63,7 +64,7 @@ export default function PaymentsPage(): React.JSX.Element {
   }, [search, status, dateFrom, dateTo]);
 
   const { data, loading } = useApi<PaymentListResponse>('/payments', params);
-  const payments = data?.data ?? [];
+  const payments = data?.items ?? [];
 
   return (
     <div className="space-y-6 p-4 lg:p-6">
@@ -114,12 +115,13 @@ export default function PaymentsPage(): React.JSX.Element {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--color-border)] text-left text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                <th className="px-4 py-3">Reference</th>
-                <th className="px-4 py-3">Payer</th>
+                <th className="px-4 py-3">Payment Number</th>
+                <th className="px-4 py-3">Customer ID</th>
                 <th className="px-4 py-3 text-right">Amount</th>
                 <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Method</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Matched Invoice</th>
+                <th className="px-4 py-3">Invoice</th>
               </tr>
             </thead>
             <tbody>
@@ -129,25 +131,30 @@ export default function PaymentsPage(): React.JSX.Element {
                   className="border-b border-[var(--color-border)] transition-colors hover:bg-[var(--color-accent)]/30"
                 >
                   <td className="px-4 py-3 font-mono-figures font-medium">
-                    {pmt.reference}
+                    {pmt.paymentNumber}
                   </td>
-                  <td className="px-4 py-3">{pmt.payerName}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--color-muted-foreground)]">
+                    {pmt.customerId}
+                  </td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(pmt.amount)} size="sm" />
+                    <MoneyDisplay amount={BigInt(pmt.amountSatang)} size="sm" />
                   </td>
                   <td className="px-4 py-3 text-[var(--color-muted-foreground)]">
-                    {new Date(pmt.date).toLocaleDateString('th-TH')}
+                    {new Date(pmt.paymentDate).toLocaleDateString('th-TH')}
+                  </td>
+                  <td className="px-4 py-3 text-[var(--color-muted-foreground)] capitalize">
+                    {pmt.paymentMethod.replace('_', ' ')}
                   </td>
                   <td className="px-4 py-3">
                     <DocumentStatus status={pmt.status} size="sm" />
                   </td>
                   <td className="px-4 py-3">
-                    {pmt.matchedInvoiceRef ? (
+                    {pmt.invoiceId ? (
                       <Link
-                        href={`/invoices/${pmt.matchedInvoiceId ?? ''}`}
+                        href={`/invoices/${pmt.invoiceId}`}
                         className="font-mono-figures text-[var(--color-primary)] hover:underline"
                       >
-                        {pmt.matchedInvoiceRef}
+                        {pmt.invoiceId.slice(0, 8)}…
                       </Link>
                     ) : (
                       <span className="text-[var(--color-muted-foreground)]">--</span>

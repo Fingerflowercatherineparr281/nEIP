@@ -11,22 +11,34 @@ import { showToast } from '@/components/ui/toast';
 import { api, AppError } from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-client';
 import { useAuthStore } from '@/stores/auth-store';
+import { useSidebarStore } from '@/stores/sidebar-store';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
+// Raw API response from /accounts uses snake_case
+interface AccountRaw {
+  id: string;
+  code: string;
+  name_th: string;
+  name_en: string;
+  account_type: string;
+  is_active: boolean;
+}
+
+interface AccountListResponse {
+  items: AccountRaw[];
+  total: number;
+}
+
+// Normalized camelCase version used by UI
 interface Account {
   id: string;
   code: string;
   nameTh: string;
   nameEn: string;
   type: string;
-}
-
-interface AccountListResponse {
-  data: Account[];
-  total: number;
 }
 
 interface LineItem {
@@ -215,6 +227,7 @@ export default function NewJournalEntryPage(): React.JSX.Element {
   const router = useRouter();
   const tenantId = useAuthStore((s) => s.tenantId) ?? 'default';
   const queryClient = useQueryClient();
+  const sidebarCollapsed = useSidebarStore((s) => s.collapsed);
 
   // Form state
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0] ?? '');
@@ -233,7 +246,14 @@ export default function NewJournalEntryPage(): React.JSX.Element {
     staleTime: 60 * 1000,
   });
 
-  const accounts = accountsData?.data ?? [];
+  // Map snake_case API response to camelCase for UI consumption
+  const accounts: Account[] = (accountsData?.items ?? []).map((raw) => ({
+    id: raw.id,
+    code: raw.code,
+    nameTh: raw.name_th,
+    nameEn: raw.name_en,
+    type: raw.account_type,
+  }));
 
   // Compute totals
   const totals = useMemo(() => {
@@ -492,7 +512,7 @@ export default function NewJournalEntryPage(): React.JSX.Element {
       </div>
 
       {/* Sticky submit footer */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background px-4 py-3 lg:left-64">
+      <div className={`fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background px-4 py-3 ${sidebarCollapsed ? 'lg:left-16' : 'lg:left-64'}`}>
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="text-sm text-muted-foreground">
             {isBalanced ? (

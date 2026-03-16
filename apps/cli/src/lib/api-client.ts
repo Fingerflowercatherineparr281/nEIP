@@ -41,12 +41,8 @@ export class ApiError extends Error {
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
+  tokenType: string;
   expiresIn: number;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-  };
 }
 
 /** Minimal shape of a refresh response from the API. */
@@ -59,7 +55,7 @@ interface RefreshResponse {
 // Constants
 // ---------------------------------------------------------------------------
 
-const DEFAULT_BASE_URL = 'http://localhost:3000';
+const DEFAULT_BASE_URL = 'http://localhost:5400';
 
 // ---------------------------------------------------------------------------
 // Internal helpers

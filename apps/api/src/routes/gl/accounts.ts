@@ -10,11 +10,13 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { NotFoundError, ConflictError, API_V1_PREFIX } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
+import { toISO } from '../../lib/to-iso.js';
 import { requirePermission } from '../../hooks/require-permission.js';
 import {
   GL_ACCOUNT_CREATE,
   GL_ACCOUNT_READ,
   GL_ACCOUNT_UPDATE,
+  GL_ACCOUNT_DELETE,
 } from '../../lib/permissions.js';
 
 // ---------------------------------------------------------------------------
@@ -109,8 +111,8 @@ interface AccountRow {
   is_active: boolean;
   parent_id: string | null;
   tenant_id: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at: Date | string;
+  updated_at: Date | string;
 }
 
 interface CountRow {
@@ -130,8 +132,8 @@ function mapAccountRow(row: AccountRow) {
     accountType: row.account_type,
     isActive: row.is_active,
     parentId: row.parent_id,
-    createdAt: row.created_at.toISOString(),
-    updatedAt: row.updated_at.toISOString(),
+    createdAt: toISO(row.created_at),
+    updatedAt: toISO(row.updated_at),
   };
 }
 
@@ -255,6 +257,66 @@ export async function accountRoutes(
       request.log.info({ accountId, code, tenantId }, 'Account created');
 
       return reply.status(201).send(mapAccountRow(account));
+    },
+  );
+
+  // DELETE /api/v1/accounts/:id
+  fastify.delete<{ Params: IdParams }>(
+    `${API_V1_PREFIX}/accounts/:id`,
+    {
+      schema: {
+        description: 'Delete (soft-delete) a GL account — sets is_active=false. Returns 409 if referenced by journal entry lines.',
+        tags: ['gl'],
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: 'object',
+          required: ['id'],
+          properties: { id: { type: 'string' } },
+        },
+        response: {
+          200: { description: 'Account deleted', ...accountResponseSchema },
+        },
+      },
+      preHandler: [requireAuth, requirePermission(GL_ACCOUNT_DELETE)],
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      const { tenantId } = request.user;
+
+      // Check the account belongs to the tenant
+      const existing = await fastify.sql<[AccountRow?]>`
+        SELECT * FROM chart_of_accounts WHERE id = ${id} AND tenant_id = ${tenantId} LIMIT 1
+      `;
+      if (!existing[0]) {
+        throw new NotFoundError({ detail: `Account ${id} not found.` });
+      }
+
+      // Check for references in journal_entry_lines
+      const refs = await fastify.sql<[{ count: string }]>`
+        SELECT COUNT(*)::text AS count FROM journal_entry_lines WHERE account_id = ${id}
+      `;
+      if (parseInt(refs[0]?.count ?? '0', 10) > 0) {
+        throw new ConflictError({
+          detail: `Account ${id} is referenced by ${refs[0]?.count} journal entry line(s) and cannot be deleted.`,
+        });
+      }
+
+      // Soft-delete: set is_active = false
+      const rows = await fastify.sql<[AccountRow?]>`
+        UPDATE chart_of_accounts
+        SET is_active = false, updated_at = NOW()
+        WHERE id = ${id} AND tenant_id = ${tenantId}
+        RETURNING *
+      `;
+
+      const account = rows[0];
+      if (!account) {
+        throw new NotFoundError({ detail: `Account ${id} not found.` });
+      }
+
+      request.log.info({ accountId: id, tenantId }, 'Account soft-deleted');
+
+      return reply.status(200).send(mapAccountRow(account));
     },
   );
 

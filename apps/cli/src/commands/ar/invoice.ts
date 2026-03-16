@@ -229,29 +229,40 @@ async function invoiceVoid(id: string): Promise<void> {
  * Build the `ar invoice` sub-command group.
  */
 export function buildInvoiceCommand(): Command {
-  const invoice = new Command('invoice').description('Accounts Receivable invoice operations');
+  const invoice = new Command('invoice')
+    .description('จัดการใบแจ้งหนี้ลูกหนี้ (AR) — Accounts Receivable invoice operations')
+    .addHelpText('after', `
+Examples:
+  $ neip ar invoice create                       # สร้างใบแจ้งหนี้ใหม่ (interactive)
+  $ neip ar invoice list                         # แสดงใบแจ้งหนี้ทั้งหมด
+  $ neip ar invoice list --status overdue        # เฉพาะที่เกินกำหนด
+  $ neip ar invoice list --customer-id <id>      # กรองตามลูกค้า
+  $ neip ar invoice void <id>                    # ยกเลิกใบแจ้งหนี้
+
+Status flow: draft → sent → paid | voided | overdue
+  `);
 
   invoice
     .command('create')
-    .description('Create a new invoice interactively')
+    .description('สร้างใบแจ้งหนี้ใหม่ (interactive) — Create a new invoice interactively')
     .action(async () => {
       await invoiceCreate();
     });
 
   invoice
     .command('list')
-    .description('List invoices with optional pagination and filters')
-    .option('--page <number>', 'Page number (1-based)', '1')
-    .option('--page-size <number>', 'Number of invoices per page', '20')
-    .option('--status <status>', 'Filter by status: draft, sent, paid, voided, overdue')
-    .option('--customer-id <id>', 'Filter by customer ID')
+    .description('แสดงรายการใบแจ้งหนี้ — List invoices with optional pagination and filters')
+    .option('--page <number>', 'หน้าที่ — Page number', '1')
+    .option('--page-size <number>', 'จำนวนต่อหน้า — Number of invoices per page', '20')
+    .option('--status <status>', 'กรองตามสถานะ: draft/sent/paid/voided/overdue — Filter by status')
+    .option('--customer-id <id>', 'กรองตาม customer ID — Filter by customer ID')
     .action(async (options: InvoiceListOptions) => {
       await invoiceList(options);
     });
 
   invoice
     .command('void <id>')
-    .description('Void an invoice, preventing further payment')
+    .description('ยกเลิกใบแจ้งหนี้ (ป้องกันการชำระเงินเพิ่ม) — Void an invoice, preventing further payment')
     .action(async (id: string) => {
       await invoiceVoid(id);
     });

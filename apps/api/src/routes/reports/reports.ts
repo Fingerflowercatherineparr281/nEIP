@@ -24,6 +24,7 @@ import {
   REPORT_GL_READ,
   REPORT_AR_READ,
   REPORT_AP_READ,
+  REPORT_PNL_COMPARISON_READ,
 } from '../../lib/permissions.js';
 
 // ---------------------------------------------------------------------------
@@ -136,12 +137,15 @@ export async function reportRoutes(
             COALESCE(SUM(jel.debit_satang), 0)::text as total_debit,
             COALESCE(SUM(jel.credit_satang), 0)::text as total_credit
           FROM chart_of_accounts coa
-          LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id
-          LEFT JOIN journal_entries je ON je.id = jel.entry_id
-            AND je.status = 'posted'
-            AND je.fiscal_year = ${fiscalYear}
-            AND je.fiscal_period <= ${period}
-            AND je.tenant_id = ${tenantId}
+          LEFT JOIN (
+            SELECT jel2.account_id, jel2.debit_satang, jel2.credit_satang
+            FROM journal_entry_lines jel2
+            JOIN journal_entries je2 ON je2.id = jel2.entry_id
+              AND je2.status = 'posted'
+              AND je2.fiscal_year = ${fiscalYear}
+              AND je2.fiscal_period <= ${period}
+              AND je2.tenant_id = ${tenantId}
+          ) jel ON jel.account_id = coa.id
           WHERE coa.tenant_id = ${tenantId}
             AND coa.account_type IN ('asset', 'liability', 'equity')
           GROUP BY coa.id, coa.code, coa.name_en, coa.name_th, coa.account_type
@@ -154,11 +158,14 @@ export async function reportRoutes(
             COALESCE(SUM(jel.debit_satang), 0)::text as total_debit,
             COALESCE(SUM(jel.credit_satang), 0)::text as total_credit
           FROM chart_of_accounts coa
-          LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id
-          LEFT JOIN journal_entries je ON je.id = jel.entry_id
-            AND je.status = 'posted'
-            AND je.fiscal_year = ${fiscalYear}
-            AND je.tenant_id = ${tenantId}
+          LEFT JOIN (
+            SELECT jel2.account_id, jel2.debit_satang, jel2.credit_satang
+            FROM journal_entry_lines jel2
+            JOIN journal_entries je2 ON je2.id = jel2.entry_id
+              AND je2.status = 'posted'
+              AND je2.fiscal_year = ${fiscalYear}
+              AND je2.tenant_id = ${tenantId}
+          ) jel ON jel.account_id = coa.id
           WHERE coa.tenant_id = ${tenantId}
             AND coa.account_type IN ('asset', 'liability', 'equity')
           GROUP BY coa.id, coa.code, coa.name_en, coa.name_th, coa.account_type
@@ -262,12 +269,15 @@ export async function reportRoutes(
             COALESCE(SUM(jel.debit_satang), 0)::text as total_debit,
             COALESCE(SUM(jel.credit_satang), 0)::text as total_credit
           FROM chart_of_accounts coa
-          LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id
-          LEFT JOIN journal_entries je ON je.id = jel.entry_id
-            AND je.status = 'posted'
-            AND je.fiscal_year = ${fiscalYear}
-            AND je.fiscal_period = ${period}
-            AND je.tenant_id = ${tenantId}
+          LEFT JOIN (
+            SELECT jel2.account_id, jel2.debit_satang, jel2.credit_satang
+            FROM journal_entry_lines jel2
+            JOIN journal_entries je2 ON je2.id = jel2.entry_id
+              AND je2.status = 'posted'
+              AND je2.fiscal_year = ${fiscalYear}
+              AND je2.fiscal_period = ${period}
+              AND je2.tenant_id = ${tenantId}
+          ) jel ON jel.account_id = coa.id
           WHERE coa.tenant_id = ${tenantId}
             AND coa.account_type IN ('revenue', 'expense')
           GROUP BY coa.id, coa.code, coa.name_en, coa.name_th, coa.account_type
@@ -280,11 +290,14 @@ export async function reportRoutes(
             COALESCE(SUM(jel.debit_satang), 0)::text as total_debit,
             COALESCE(SUM(jel.credit_satang), 0)::text as total_credit
           FROM chart_of_accounts coa
-          LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id
-          LEFT JOIN journal_entries je ON je.id = jel.entry_id
-            AND je.status = 'posted'
-            AND je.fiscal_year = ${fiscalYear}
-            AND je.tenant_id = ${tenantId}
+          LEFT JOIN (
+            SELECT jel2.account_id, jel2.debit_satang, jel2.credit_satang
+            FROM journal_entry_lines jel2
+            JOIN journal_entries je2 ON je2.id = jel2.entry_id
+              AND je2.status = 'posted'
+              AND je2.fiscal_year = ${fiscalYear}
+              AND je2.tenant_id = ${tenantId}
+          ) jel ON jel.account_id = coa.id
           WHERE coa.tenant_id = ${tenantId}
             AND coa.account_type IN ('revenue', 'expense')
           GROUP BY coa.id, coa.code, coa.name_en, coa.name_th, coa.account_type
@@ -365,11 +378,14 @@ export async function reportRoutes(
           COALESCE(SUM(jel.debit_satang), 0)::text as total_debit,
           COALESCE(SUM(jel.credit_satang), 0)::text as total_credit
         FROM chart_of_accounts coa
-        LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id
-        LEFT JOIN journal_entries je ON je.id = jel.entry_id
-          AND je.status = 'posted'
-          AND je.fiscal_year = ${fiscalYear}
-          AND je.tenant_id = ${tenantId}
+        LEFT JOIN (
+          SELECT jel2.account_id, jel2.debit_satang, jel2.credit_satang
+          FROM journal_entry_lines jel2
+          JOIN journal_entries je2 ON je2.id = jel2.entry_id
+            AND je2.status = 'posted'
+            AND je2.fiscal_year = ${fiscalYear}
+            AND je2.tenant_id = ${tenantId}
+        ) jel ON jel.account_id = coa.id
         WHERE coa.tenant_id = ${tenantId}
           AND coa.is_active = true
         GROUP BY coa.id, coa.code, coa.name_en, coa.name_th, coa.account_type
@@ -550,11 +566,14 @@ export async function reportRoutes(
           COALESCE(SUM(jel.debit_satang), 0)::text as total_debit,
           COALESCE(SUM(jel.credit_satang), 0)::text as total_credit
         FROM chart_of_accounts coa
-        LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id
-        LEFT JOIN journal_entries je ON je.id = jel.entry_id
-          AND je.status = 'posted'
-          AND je.fiscal_year = ${fiscalYear}
-          AND je.tenant_id = ${tenantId}
+        LEFT JOIN (
+          SELECT jel2.account_id, jel2.debit_satang, jel2.credit_satang
+          FROM journal_entry_lines jel2
+          JOIN journal_entries je2 ON je2.id = jel2.entry_id
+            AND je2.status = 'posted'
+            AND je2.fiscal_year = ${fiscalYear}
+            AND je2.tenant_id = ${tenantId}
+        ) jel ON jel.account_id = coa.id
         WHERE coa.tenant_id = ${tenantId}
           AND coa.account_type = 'equity'
         GROUP BY coa.id, coa.code, coa.name_en, coa.name_th, coa.account_type
@@ -568,11 +587,14 @@ export async function reportRoutes(
           COALESCE(SUM(jel.debit_satang), 0)::text as total_debit,
           COALESCE(SUM(jel.credit_satang), 0)::text as total_credit
         FROM chart_of_accounts coa
-        LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id
-        LEFT JOIN journal_entries je ON je.id = jel.entry_id
-          AND je.status = 'posted'
-          AND je.fiscal_year < ${fiscalYear}
-          AND je.tenant_id = ${tenantId}
+        LEFT JOIN (
+          SELECT jel2.account_id, jel2.debit_satang, jel2.credit_satang
+          FROM journal_entry_lines jel2
+          JOIN journal_entries je2 ON je2.id = jel2.entry_id
+            AND je2.status = 'posted'
+            AND je2.fiscal_year < ${fiscalYear}
+            AND je2.tenant_id = ${tenantId}
+        ) jel ON jel.account_id = coa.id
         WHERE coa.tenant_id = ${tenantId}
           AND coa.account_type = 'equity'
         GROUP BY coa.id, coa.code, coa.name_en, coa.name_th, coa.account_type
@@ -864,6 +886,685 @@ export async function reportRoutes(
         },
         total: money(totalOutstanding),
         vendors,
+      });
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // GET /api/v1/reports/pnl-comparison
+  // -------------------------------------------------------------------------
+
+  type PnlMode = 'monthly' | 'ytd' | 'yoy' | 'mom';
+
+  interface PnlComparisonQuery {
+    mode: PnlMode;
+    fiscalYear: number;
+    fiscalPeriod?: number;
+    compareYear?: number;
+  }
+
+  /** A single P&L account row returned from the database for period queries. */
+  interface PnlPeriodRow {
+    account_id: string;
+    code: string;
+    name_th: string;
+    account_type: string;
+    fiscal_period: number;
+    total_debit: string;
+    total_credit: string;
+  }
+
+  /**
+   * Query all revenue/expense lines for a given fiscal year (and optional
+   * upper-period bound), grouped by account and fiscal period.
+   */
+  async function queryPnlByPeriod(
+    fastifyInstance: FastifyInstance,
+    tenantId: string,
+    fiscalYear: number,
+    maxPeriod?: number,
+  ): Promise<PnlPeriodRow[]> {
+    if (maxPeriod !== undefined) {
+      return fastifyInstance.sql<PnlPeriodRow[]>`
+        SELECT
+          coa.id as account_id,
+          coa.code,
+          coa.name_th,
+          coa.account_type,
+          je.fiscal_period,
+          COALESCE(SUM(jel.debit_satang), 0)::text as total_debit,
+          COALESCE(SUM(jel.credit_satang), 0)::text as total_credit
+        FROM chart_of_accounts coa
+        JOIN journal_entry_lines jel ON jel.account_id = coa.id
+        JOIN journal_entries je ON je.id = jel.entry_id
+          AND je.status = 'posted'
+          AND je.fiscal_year = ${fiscalYear}
+          AND je.fiscal_period <= ${maxPeriod}
+          AND je.tenant_id = ${tenantId}
+        WHERE coa.tenant_id = ${tenantId}
+          AND coa.account_type IN ('revenue', 'expense')
+        GROUP BY coa.id, coa.code, coa.name_th, coa.account_type, je.fiscal_period
+        ORDER BY coa.code, je.fiscal_period
+      `;
+    }
+    return fastifyInstance.sql<PnlPeriodRow[]>`
+      SELECT
+        coa.id as account_id,
+        coa.code,
+        coa.name_th,
+        coa.account_type,
+        je.fiscal_period,
+        COALESCE(SUM(jel.debit_satang), 0)::text as total_debit,
+        COALESCE(SUM(jel.credit_satang), 0)::text as total_credit
+      FROM chart_of_accounts coa
+      JOIN journal_entry_lines jel ON jel.account_id = coa.id
+      JOIN journal_entries je ON je.id = jel.entry_id
+        AND je.status = 'posted'
+        AND je.fiscal_year = ${fiscalYear}
+        AND je.tenant_id = ${tenantId}
+      WHERE coa.tenant_id = ${tenantId}
+        AND coa.account_type IN ('revenue', 'expense')
+      GROUP BY coa.id, coa.code, coa.name_th, coa.account_type, je.fiscal_period
+      ORDER BY coa.code, je.fiscal_period
+    `;
+  }
+
+  /**
+   * Derive the "natural" amount sign from account type:
+   *   revenue → credit - debit  (credit-normal)
+   *   expense → debit - credit  (debit-normal)
+   */
+  function pnlAmount(accountType: string, debit: bigint, credit: bigint): bigint {
+    return accountType === 'revenue' ? credit - debit : debit - credit;
+  }
+
+  fastify.get<{ Querystring: PnlComparisonQuery }>(
+    `${API_V1_PREFIX}/reports/pnl-comparison`,
+    {
+      schema: {
+        description: 'P&L comparison report — monthly, YTD, YoY, or MoM modes',
+        tags: ['reports'],
+        security: [{ bearerAuth: [] }],
+        querystring: {
+          type: 'object',
+          required: ['mode', 'fiscalYear'],
+          properties: {
+            mode: { type: 'string', enum: ['monthly', 'ytd', 'yoy', 'mom'] },
+            fiscalYear: { type: 'integer' },
+            fiscalPeriod: { type: 'integer', minimum: 1, maximum: 12 },
+            compareYear: { type: 'integer' },
+          },
+        },
+        response: {
+          200: {
+            description: 'P&L comparison report',
+            type: 'object',
+            additionalProperties: true,
+          },
+          400: {
+            description: 'Bad request',
+            type: 'object',
+            properties: {
+              error: { type: 'string' },
+            },
+          },
+        },
+      },
+      preHandler: [requireAuth, requirePermission(REPORT_PNL_COMPARISON_READ)],
+    },
+    async (request, reply) => {
+      const { tenantId } = request.user;
+      const { mode, fiscalYear, fiscalPeriod, compareYear } = request.query;
+
+      // ------------------------------------------------------------------
+      // mode=monthly — all 12 periods side-by-side
+      // mode=ytd     — cumulative through each period
+      // ------------------------------------------------------------------
+      if (mode === 'monthly' || mode === 'ytd') {
+        const rows = await queryPnlByPeriod(fastify, tenantId, fiscalYear);
+
+        // Map: accountId → { meta, amounts[12] }
+        const accountMap = new Map<string, {
+          code: string;
+          nameTh: string;
+          type: string;
+          amounts: bigint[];
+        }>();
+
+        for (const row of rows) {
+          const periodIdx = row.fiscal_period - 1; // 0-based
+          if (periodIdx < 0 || periodIdx > 11) continue;
+
+          let entry = accountMap.get(row.account_id);
+          if (entry === undefined) {
+            entry = {
+              code: row.code,
+              nameTh: row.name_th,
+              type: row.account_type,
+              amounts: Array.from({ length: 12 }, () => 0n),
+            };
+            accountMap.set(row.account_id, entry);
+          }
+
+          const debit = BigInt(row.total_debit);
+          const credit = BigInt(row.total_credit);
+          entry.amounts[periodIdx] = (entry.amounts[periodIdx] ?? 0n) + pnlAmount(row.account_type, debit, credit);
+        }
+
+        // Build per-period revenue/expense/net summary arrays
+        const summaryRevenue = Array.from({ length: 12 }, () => 0n);
+        const summaryExpenses = Array.from({ length: 12 }, () => 0n);
+
+        const accounts = [...accountMap.values()].map((a) => {
+          // For YTD, convert to cumulative
+          const monthlyAmounts = a.amounts;
+          const finalAmounts: bigint[] = mode === 'ytd'
+            ? monthlyAmounts.reduce<bigint[]>((acc, v, i) => {
+                acc.push((acc[i - 1] ?? 0n) + v);
+                return acc;
+              }, [])
+            : [...monthlyAmounts];
+
+          finalAmounts.forEach((v, i) => {
+            if (a.type === 'revenue') {
+              summaryRevenue[i] = (summaryRevenue[i] ?? 0n) + v;
+            } else {
+              summaryExpenses[i] = (summaryExpenses[i] ?? 0n) + v;
+            }
+          });
+
+          const total = finalAmounts.reduce((s, v) => s + v, 0n);
+          return {
+            code: a.code,
+            nameTh: a.nameTh,
+            type: a.type,
+            months: finalAmounts.map((v) => v.toString()),
+            total: total.toString(),
+          };
+        });
+
+        const summaryNet = summaryRevenue.map((r, i) => (r - (summaryExpenses[i] ?? 0n)).toString());
+
+        return reply.status(200).send({
+          mode,
+          fiscalYear,
+          generatedAt: new Date().toISOString(),
+          accounts,
+          summary: {
+            totalRevenue: summaryRevenue.map((v) => v.toString()),
+            totalExpenses: summaryExpenses.map((v) => v.toString()),
+            netIncome: summaryNet,
+          },
+        });
+      }
+
+      // ------------------------------------------------------------------
+      // mode=yoy — current year vs compare year (default: fiscalYear-1)
+      // ------------------------------------------------------------------
+      if (mode === 'yoy') {
+        const prevYear = compareYear ?? fiscalYear - 1;
+
+        const [currentRows, previousRows] = await Promise.all([
+          queryPnlByPeriod(fastify, tenantId, fiscalYear),
+          queryPnlByPeriod(fastify, tenantId, prevYear),
+        ]);
+
+        // Aggregate totals per account for each year (sum all periods)
+        function aggregateByAccount(
+          rows: PnlPeriodRow[],
+        ): Map<string, { code: string; nameTh: string; type: string; total: bigint }> {
+          const m = new Map<string, { code: string; nameTh: string; type: string; total: bigint }>();
+          for (const row of rows) {
+            let entry = m.get(row.account_id);
+            if (entry === undefined) {
+              entry = { code: row.code, nameTh: row.name_th, type: row.account_type, total: 0n };
+              m.set(row.account_id, entry);
+            }
+            const debit = BigInt(row.total_debit);
+            const credit = BigInt(row.total_credit);
+            entry.total += pnlAmount(row.account_type, debit, credit);
+          }
+          return m;
+        }
+
+        const currentMap = aggregateByAccount(currentRows);
+        const previousMap = aggregateByAccount(previousRows);
+
+        // Union of all account IDs across both years
+        const allKeys = new Set([...currentMap.keys(), ...previousMap.keys()]);
+
+        let currentRevenue = 0n;
+        let previousRevenue = 0n;
+        let currentExpenses = 0n;
+        let previousExpenses = 0n;
+
+        const accounts = [...allKeys].map((accountId) => {
+          const cur = currentMap.get(accountId);
+          const prev = previousMap.get(accountId);
+          const meta = cur ?? prev!;
+          const curTotal = cur?.total ?? 0n;
+          const prevTotal = prev?.total ?? 0n;
+          const changeSatang = curTotal - prevTotal;
+          const changePercent = prevTotal === 0n
+            ? null
+            : Number((changeSatang * 10000n) / prevTotal) / 100;
+
+          if (meta.type === 'revenue') {
+            currentRevenue += curTotal;
+            previousRevenue += prevTotal;
+          } else {
+            currentExpenses += curTotal;
+            previousExpenses += prevTotal;
+          }
+
+          return {
+            code: meta.code,
+            nameTh: meta.nameTh,
+            type: meta.type,
+            current: curTotal.toString(),
+            previous: prevTotal.toString(),
+            changeSatang: changeSatang.toString(),
+            changePercent,
+          };
+        });
+
+        // Sort by code for consistent ordering
+        accounts.sort((a, b) => a.code.localeCompare(b.code));
+
+        return reply.status(200).send({
+          mode: 'yoy',
+          currentYear: fiscalYear,
+          previousYear: prevYear,
+          generatedAt: new Date().toISOString(),
+          accounts,
+          summary: {
+            currentRevenue: currentRevenue.toString(),
+            previousRevenue: previousRevenue.toString(),
+            currentExpenses: currentExpenses.toString(),
+            previousExpenses: previousExpenses.toString(),
+            currentNet: (currentRevenue - currentExpenses).toString(),
+            previousNet: (previousRevenue - previousExpenses).toString(),
+          },
+        });
+      }
+
+      // ------------------------------------------------------------------
+      // mode=mom — this month vs previous month
+      // ------------------------------------------------------------------
+      if (mode === 'mom') {
+        const currentPeriod = fiscalPeriod ?? new Date().getMonth() + 1;
+        let prevPeriodYear = fiscalYear;
+        let prevPeriod = currentPeriod - 1;
+        if (prevPeriod < 1) {
+          prevPeriod = 12;
+          prevPeriodYear = fiscalYear - 1;
+        }
+
+        // Query both periods independently
+        const [currentRows, previousRows] = await Promise.all([
+          fastify.sql<PnlPeriodRow[]>`
+            SELECT
+              coa.id as account_id,
+              coa.code,
+              coa.name_th,
+              coa.account_type,
+              je.fiscal_period,
+              COALESCE(SUM(jel.debit_satang), 0)::text as total_debit,
+              COALESCE(SUM(jel.credit_satang), 0)::text as total_credit
+            FROM chart_of_accounts coa
+            JOIN journal_entry_lines jel ON jel.account_id = coa.id
+            JOIN journal_entries je ON je.id = jel.entry_id
+              AND je.status = 'posted'
+              AND je.fiscal_year = ${fiscalYear}
+              AND je.fiscal_period = ${currentPeriod}
+              AND je.tenant_id = ${tenantId}
+            WHERE coa.tenant_id = ${tenantId}
+              AND coa.account_type IN ('revenue', 'expense')
+            GROUP BY coa.id, coa.code, coa.name_th, coa.account_type, je.fiscal_period
+            ORDER BY coa.code
+          `,
+          fastify.sql<PnlPeriodRow[]>`
+            SELECT
+              coa.id as account_id,
+              coa.code,
+              coa.name_th,
+              coa.account_type,
+              je.fiscal_period,
+              COALESCE(SUM(jel.debit_satang), 0)::text as total_debit,
+              COALESCE(SUM(jel.credit_satang), 0)::text as total_credit
+            FROM chart_of_accounts coa
+            JOIN journal_entry_lines jel ON jel.account_id = coa.id
+            JOIN journal_entries je ON je.id = jel.entry_id
+              AND je.status = 'posted'
+              AND je.fiscal_year = ${prevPeriodYear}
+              AND je.fiscal_period = ${prevPeriod}
+              AND je.tenant_id = ${tenantId}
+            WHERE coa.tenant_id = ${tenantId}
+              AND coa.account_type IN ('revenue', 'expense')
+            GROUP BY coa.id, coa.code, coa.name_th, coa.account_type, je.fiscal_period
+            ORDER BY coa.code
+          `,
+        ]);
+
+        const currentTotals = new Map<string, { code: string; nameTh: string; type: string; total: bigint }>();
+        for (const row of currentRows) {
+          const d = BigInt(row.total_debit);
+          const c = BigInt(row.total_credit);
+          currentTotals.set(row.account_id, {
+            code: row.code,
+            nameTh: row.name_th,
+            type: row.account_type,
+            total: pnlAmount(row.account_type, d, c),
+          });
+        }
+
+        const previousTotals = new Map<string, { code: string; nameTh: string; type: string; total: bigint }>();
+        for (const row of previousRows) {
+          const d = BigInt(row.total_debit);
+          const c = BigInt(row.total_credit);
+          previousTotals.set(row.account_id, {
+            code: row.code,
+            nameTh: row.name_th,
+            type: row.account_type,
+            total: pnlAmount(row.account_type, d, c),
+          });
+        }
+
+        const allKeys = new Set([...currentTotals.keys(), ...previousTotals.keys()]);
+
+        let currentRevenue = 0n;
+        let previousRevenue = 0n;
+        let currentExpenses = 0n;
+        let previousExpenses = 0n;
+
+        const accounts = [...allKeys].map((accountId) => {
+          const cur = currentTotals.get(accountId);
+          const prev = previousTotals.get(accountId);
+          const meta = cur ?? prev!;
+          const curTotal = cur?.total ?? 0n;
+          const prevTotal = prev?.total ?? 0n;
+          const changeSatang = curTotal - prevTotal;
+          const changePercent = prevTotal === 0n
+            ? null
+            : Number((changeSatang * 10000n) / prevTotal) / 100;
+
+          if (meta.type === 'revenue') {
+            currentRevenue += curTotal;
+            previousRevenue += prevTotal;
+          } else {
+            currentExpenses += curTotal;
+            previousExpenses += prevTotal;
+          }
+
+          return {
+            code: meta.code,
+            nameTh: meta.nameTh,
+            type: meta.type,
+            current: curTotal.toString(),
+            previous: prevTotal.toString(),
+            changeSatang: changeSatang.toString(),
+            changePercent,
+          };
+        });
+
+        accounts.sort((a, b) => a.code.localeCompare(b.code));
+
+        return reply.status(200).send({
+          mode: 'mom',
+          currentPeriod: { year: fiscalYear, month: currentPeriod },
+          previousPeriod: { year: prevPeriodYear, month: prevPeriod },
+          generatedAt: new Date().toISOString(),
+          accounts,
+          summary: {
+            currentRevenue: currentRevenue.toString(),
+            previousRevenue: previousRevenue.toString(),
+            currentExpenses: currentExpenses.toString(),
+            previousExpenses: previousExpenses.toString(),
+            currentNet: (currentRevenue - currentExpenses).toString(),
+            previousNet: (previousRevenue - previousExpenses).toString(),
+          },
+        });
+      }
+
+      return reply.status(400).send({ error: `Unknown mode: ${mode as string}` });
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // GET /api/v1/reports/fixed-asset-register
+  // -------------------------------------------------------------------------
+  fastify.get(
+    `${API_V1_PREFIX}/reports/fixed-asset-register`,
+    {
+      schema: {
+        description: 'Fixed Asset Register Report',
+        tags: ['reports'],
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: { type: 'object', additionalProperties: true },
+        },
+      },
+      preHandler: [requireAuth, requirePermission(REPORT_GL_READ)],
+    },
+    async (request, reply) => {
+      const { tenantId } = request.user;
+
+      const assets = await fastify.sql<Array<{
+        id: string; asset_code: string; name_en: string; category: string;
+        purchase_cost_satang: bigint; salvage_value_satang: bigint;
+        accumulated_depreciation_satang: bigint; net_book_value_satang: bigint;
+        status: string; purchase_date: string;
+      }>>`
+        SELECT id, asset_code, name_en, category, purchase_cost_satang,
+               salvage_value_satang, accumulated_depreciation_satang,
+               net_book_value_satang, status, purchase_date
+        FROM fixed_assets
+        WHERE tenant_id = ${tenantId}
+        ORDER BY asset_code
+      `;
+
+      const items = assets.map((a) => ({
+        id: a.id,
+        assetCode: a.asset_code,
+        nameEn: a.name_en,
+        category: a.category,
+        purchaseCostSatang: a.purchase_cost_satang.toString(),
+        salvageValueSatang: a.salvage_value_satang.toString(),
+        accumulatedDepreciationSatang: a.accumulated_depreciation_satang.toString(),
+        netBookValueSatang: a.net_book_value_satang.toString(),
+        status: a.status,
+        purchaseDate: a.purchase_date,
+      }));
+
+      return reply.status(200).send({
+        reportName: 'Fixed Asset Register',
+        generatedAt: new Date().toISOString(),
+        items,
+        total: items.length,
+      });
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // GET /api/v1/reports/low-stock
+  // -------------------------------------------------------------------------
+  fastify.get(
+    `${API_V1_PREFIX}/reports/low-stock`,
+    {
+      schema: {
+        description: 'Low Stock Alert Report',
+        tags: ['reports'],
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: { type: 'object', additionalProperties: true },
+        },
+      },
+      preHandler: [requireAuth, requirePermission(REPORT_GL_READ)],
+    },
+    async (request, reply) => {
+      const { tenantId } = request.user;
+
+      const lowStockItems = await fastify.sql<Array<{
+        id: string; sku: string; name_th: string; name_en: string;
+        min_stock_qty: number; total_qty: number;
+      }>>`
+        SELECT p.id, p.sku, p.name_th, p.name_en, p.min_stock_qty,
+               COALESCE(SUM(si.quantity), 0)::int as total_qty
+        FROM products p
+        LEFT JOIN stock_items si ON si.product_id = p.id
+        WHERE p.tenant_id = ${tenantId}
+        GROUP BY p.id, p.sku, p.name_th, p.name_en, p.min_stock_qty
+        HAVING COALESCE(SUM(si.quantity), 0) < p.min_stock_qty
+        ORDER BY p.sku
+      `.catch(() => [] as Array<{ id: string; sku: string; name_th: string; name_en: string; min_stock_qty: number; total_qty: number }>);
+
+      const items = lowStockItems.map((i) => ({
+        id: i.id,
+        sku: i.sku,
+        nameTh: i.name_th,
+        nameEn: i.name_en,
+        minStockQty: i.min_stock_qty,
+        currentQty: i.total_qty,
+        shortfall: i.min_stock_qty - i.total_qty,
+      }));
+
+      return reply.status(200).send({
+        reportName: 'Low Stock Alert',
+        generatedAt: new Date().toISOString(),
+        items,
+        total: items.length,
+      });
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // GET /api/v1/reports/stock-valuation
+  // -------------------------------------------------------------------------
+  fastify.get(
+    `${API_V1_PREFIX}/reports/stock-valuation`,
+    {
+      schema: {
+        description: 'Stock Valuation Report (average cost)',
+        tags: ['reports'],
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: { type: 'object', additionalProperties: true },
+        },
+      },
+      preHandler: [requireAuth, requirePermission(REPORT_GL_READ)],
+    },
+    async (request, reply) => {
+      const { tenantId } = request.user;
+
+      const stockItems = await fastify.sql<Array<{
+        warehouse_id: string; warehouse_name: string;
+        product_id: string; sku: string; name_en: string;
+        quantity: number; unit_cost_satang: bigint; total_value_satang: bigint;
+      }>>`
+        SELECT w.id as warehouse_id, w.name as warehouse_name,
+               p.id as product_id, p.sku, p.name_en,
+               COALESCE(si.quantity, 0) as quantity,
+               p.cost_satang as unit_cost_satang,
+               (COALESCE(si.quantity, 0) * p.cost_satang)::bigint as total_value_satang
+        FROM warehouses w
+        CROSS JOIN products p
+        LEFT JOIN stock_items si ON si.warehouse_id = w.id AND si.product_id = p.id
+        WHERE w.tenant_id = ${tenantId} AND p.tenant_id = ${tenantId}
+        ORDER BY w.name, p.sku
+      `.catch(() => [] as Array<{ warehouse_id: string; warehouse_name: string; product_id: string; sku: string; name_en: string; quantity: number; unit_cost_satang: bigint; total_value_satang: bigint }>);
+
+      const totalValueSatang = stockItems.reduce((sum, i) => sum + BigInt(i.total_value_satang ?? 0), 0n);
+
+      const items = stockItems.map((i) => ({
+        warehouseId: i.warehouse_id,
+        warehouseName: i.warehouse_name,
+        productId: i.product_id,
+        sku: i.sku,
+        nameEn: i.name_en,
+        quantity: i.quantity,
+        unitCostSatang: i.unit_cost_satang?.toString() ?? '0',
+        totalValueSatang: i.total_value_satang?.toString() ?? '0',
+      }));
+
+      return reply.status(200).send({
+        reportName: 'Stock Valuation',
+        generatedAt: new Date().toISOString(),
+        items,
+        totalValueSatang: totalValueSatang.toString(),
+        currency: 'THB',
+      });
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // GET /api/v1/reports/wht-summary
+  // -------------------------------------------------------------------------
+  fastify.get(
+    `${API_V1_PREFIX}/reports/wht-summary`,
+    {
+      schema: {
+        description: 'WHT Certificate Summary Report',
+        tags: ['reports'],
+        security: [{ bearerAuth: [] }],
+        querystring: {
+          type: 'object',
+          properties: {
+            month: { type: 'integer', minimum: 1, maximum: 12 },
+            year: { type: 'integer' },
+          },
+        },
+        response: {
+          200: { type: 'object', additionalProperties: true },
+        },
+      },
+      preHandler: [requireAuth, requirePermission(REPORT_AP_READ)],
+    },
+    async (request, reply) => {
+      const { tenantId } = request.user;
+      const { month, year } = request.query as { month?: number; year?: number };
+      const targetYear = year ?? new Date().getFullYear();
+      const targetMonth = month ?? new Date().getMonth() + 1;
+
+      const certs = await fastify.sql<Array<{
+        id: string; certificate_number: string; certificate_type: string;
+        payee_name: string; income_type: string; gross_income_satang: bigint;
+        wht_amount_satang: bigint; status: string; payment_date: string;
+      }>>`
+        SELECT id, certificate_number, certificate_type, payee_name,
+               income_type, gross_income_satang, wht_amount_satang,
+               status, payment_date
+        FROM wht_certificates
+        WHERE tenant_id = ${tenantId}
+          AND EXTRACT(YEAR FROM payment_date::date) = ${targetYear}
+          AND EXTRACT(MONTH FROM payment_date::date) = ${targetMonth}
+          AND status != 'voided'
+        ORDER BY payment_date
+      `.catch(() => [] as Array<{ id: string; certificate_number: string; certificate_type: string; payee_name: string; income_type: string; gross_income_satang: bigint; wht_amount_satang: bigint; status: string; payment_date: string }>);
+
+      const totalWhtSatang = certs.reduce((sum, c) => sum + BigInt(c.wht_amount_satang ?? 0), 0n);
+      const totalGrossSatang = certs.reduce((sum, c) => sum + BigInt(c.gross_income_satang ?? 0), 0n);
+
+      const items = certs.map((c) => ({
+        id: c.id,
+        certificateNumber: c.certificate_number,
+        certificateType: c.certificate_type,
+        payeeName: c.payee_name,
+        incomeType: c.income_type,
+        grossIncomeSatang: c.gross_income_satang?.toString() ?? '0',
+        whtAmountSatang: c.wht_amount_satang?.toString() ?? '0',
+        status: c.status,
+        paymentDate: c.payment_date,
+      }));
+
+      return reply.status(200).send({
+        reportName: 'WHT Summary',
+        year: targetYear,
+        month: targetMonth,
+        generatedAt: new Date().toISOString(),
+        items,
+        totalGrossIncomeSatang: totalGrossSatang.toString(),
+        totalWhtAmountSatang: totalWhtSatang.toString(),
+        currency: 'THB',
       });
     },
   );

@@ -14,6 +14,7 @@ import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { NotFoundError, ForbiddenError, API_V1_PREFIX } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
 import { requirePermission } from '../../hooks/require-permission.js';
+import { toISO } from '../../lib/to-iso.js';
 import { USER_UPDATE } from '../../lib/permissions.js';
 
 // ---------------------------------------------------------------------------
@@ -53,6 +54,12 @@ const updateSettingsBodySchema = {
       maxLength: 10,
       description: 'Default locale. Defaults to th-TH.',
     },
+    dataRetentionDays: {
+      type: 'integer',
+      minimum: 1,
+      maximum: 36500,
+      description: 'Data retention policy in days. Default 2555 (7 years — Thai tax law requirement per Revenue Code Section 87/3).',
+    },
   },
 } as const;
 
@@ -65,6 +72,7 @@ const updateSettingsResponseSchema = {
     llmApiKeyConfigured: { type: 'boolean', description: 'Whether an LLM API key is set (key never returned)' },
     currency: { type: 'string' },
     locale: { type: 'string' },
+    dataRetentionDays: { type: 'integer', description: 'Data retention policy in days (default 2555 = 7 years)' },
     updatedAt: { type: 'string', format: 'date-time' },
   },
 } as const;
@@ -83,12 +91,13 @@ interface UpdateSettingsBody {
   llmModel?: string;
   currency?: string;
   locale?: string;
+  dataRetentionDays?: number;
 }
 
 interface TenantRow {
   id: string;
   settings: Record<string, unknown> | null;
-  updated_at: Date;
+  updated_at: Date | string;
 }
 
 // ---------------------------------------------------------------------------
@@ -144,7 +153,7 @@ export async function updateSettingsRoute(
         });
       }
 
-      const { llmApiKey, llmProvider, llmModel, currency, locale } = request.body;
+      const { llmApiKey, llmProvider, llmModel, currency, locale, dataRetentionDays } = request.body;
 
       // Build the settings update object — never store the raw API key.
       const settingsUpdate: Record<string, unknown> = {};
@@ -152,6 +161,8 @@ export async function updateSettingsRoute(
       if (llmModel !== undefined) settingsUpdate['llmModel'] = llmModel;
       if (currency !== undefined) settingsUpdate['currency'] = currency;
       if (locale !== undefined) settingsUpdate['locale'] = locale;
+      // COMP-033: data retention policy (Thai tax law: 7 years = 2555 days default)
+      if (dataRetentionDays !== undefined) settingsUpdate['dataRetentionDays'] = dataRetentionDays;
       if (llmApiKey !== undefined) {
         // Encrypt and store — never log the raw key.
         settingsUpdate['llmApiKeyEncrypted'] = encryptApiKey(llmApiKey);
@@ -188,7 +199,9 @@ export async function updateSettingsRoute(
         llmApiKeyConfigured: (s['llmApiKeyConfigured'] as boolean | undefined) ?? false,
         currency: (s['currency'] as string | undefined) ?? 'THB',
         locale: (s['locale'] as string | undefined) ?? 'th-TH',
-        updatedAt: tenant.updated_at.toISOString(),
+        // Default 2555 days = 7 years (Thai Revenue Code Section 87/3 requirement)
+        dataRetentionDays: (s['dataRetentionDays'] as number | undefined) ?? 2555,
+        updatedAt: toISO(tenant.updated_at),
       });
     },
   );

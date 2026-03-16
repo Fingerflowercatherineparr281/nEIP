@@ -13,3 +13,6 @@ coverage
 npm-debug.log*
 pnpm-debug.log*
 .claude/
+test-results/
+.code-review-graph/
+.mcp.json

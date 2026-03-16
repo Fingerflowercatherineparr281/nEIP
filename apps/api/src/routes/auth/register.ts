@@ -15,6 +15,7 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import * as argon2 from 'argon2';
 import { ValidationError, ConflictError, API_V1_PREFIX } from '@neip/shared';
+import { toISO } from '../../lib/to-iso.js';
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -70,8 +71,8 @@ interface UserRow {
   email: string;
   name: string;
   tenant_id: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at: Date | string;
+  updated_at: Date | string;
 }
 
 // ---------------------------------------------------------------------------
@@ -166,8 +167,8 @@ export async function registerRoute(
         email: created.email,
         name: created.name,
         tenantId: created.tenant_id,
-        createdAt: created.created_at.toISOString(),
-        updatedAt: created.updated_at.toISOString(),
+        createdAt: toISO(created.created_at),
+        updatedAt: toISO(created.updated_at),
       });
     },
   );

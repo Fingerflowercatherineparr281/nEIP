@@ -20,6 +20,7 @@ interface AuthState {
   user: AuthUser | null;
   token: string | null;
   tenantId: string | null;
+  _hydrated: boolean;
   setAuth: (user: AuthUser, token: string) => void;
   setTenantId: (tenantId: string) => void;
   setOnboardingComplete: () => void;
@@ -33,6 +34,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       tenantId: null,
+      _hydrated: false,
       setAuth: (user: AuthUser, token: string) => {
         if (typeof window !== 'undefined') {
           localStorage.setItem('neip-auth-token', token);
@@ -59,6 +61,11 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'neip-auth',
+      onRehydrateStorage: () => {
+        return () => {
+          useAuthStore.setState({ _hydrated: true } as Partial<AuthState>);
+        };
+      },
     },
   ),
 );

@@ -10,6 +10,7 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { NotFoundError, ForbiddenError, API_V1_PREFIX } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
+import { toISO } from '../../lib/to-iso.js';
 
 // ---------------------------------------------------------------------------
 // JSON Schemas
@@ -36,8 +37,8 @@ interface TenantRow {
   name: string;
   slug: string;
   settings: unknown;
-  created_at: Date;
-  updated_at: Date;
+  created_at: Date | string;
+  updated_at: Date | string;
 }
 
 // ---------------------------------------------------------------------------
@@ -109,8 +110,8 @@ export async function getOrganizationRoute(
         name: tenant.name,
         slug: tenant.slug,
         settings: tenant.settings,
-        createdAt: tenant.created_at.toISOString(),
-        updatedAt: tenant.updated_at.toISOString(),
+        createdAt: toISO(tenant.created_at),
+        updatedAt: toISO(tenant.updated_at),
       });
     },
   );

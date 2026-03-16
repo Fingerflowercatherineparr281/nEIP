@@ -19,6 +19,7 @@ import {
   ConflictError,
 } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
+import { toISO } from '../../lib/to-iso.js';
 import { requirePermission } from '../../hooks/require-permission.js';
 import { ROLE_ASSIGN, ROLE_READ } from '../../lib/permissions.js';
 
@@ -95,8 +96,8 @@ interface RoleRow {
   id: string;
   name: string;
   tenant_id: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at: Date | string;
+  updated_at: Date | string;
 }
 
 interface PermissionRow {
@@ -121,6 +122,7 @@ export async function roleRoutes(
       preHandler: [requireAuth, requirePermission(ROLE_ASSIGN)],
       schema: {
         tags: ['roles'],
+        description: 'สร้างบทบาทที่กำหนดเองพร้อมชุดสิทธิ์ — Create a custom role with a set of permissions',
         summary: 'Create a custom role with permissions',
         body: createRoleBodySchema,
         response: {
@@ -146,26 +148,27 @@ export async function roleRoutes(
       }
 
       const roleId = crypto.randomUUID();
-      const now = new Date();
+      const nowIso = new Date().toISOString();
 
       // Insert the role
       await fastify.sql`
-        INSERT INTO roles (id, name, tenant_id, created_at, updated_at)
-        VALUES (${roleId}, ${name}, ${tenantId}, ${now}, ${now})
+        INSERT INTO roles (id, name, tenant_id)
+        VALUES (${roleId}, ${name}, ${tenantId})
       `;
 
       // Insert role_permissions — ensure each permission exists
       for (const permId of permissions) {
         // Upsert permission if it doesn't exist
         await fastify.sql`
-          INSERT INTO permissions (id, name, description, created_at)
-          VALUES (${permId}, ${permId}, ${'Custom permission: ' + permId}, ${now})
+          INSERT INTO permissions (id, name, description)
+          VALUES (${permId}, ${permId}, ${'Custom permission: ' + permId})
           ON CONFLICT (id) DO NOTHING
         `;
 
         await fastify.sql`
-          INSERT INTO role_permissions (role_id, permission_id, tenant_id, created_at, updated_at)
-          VALUES (${roleId}, ${permId}, ${tenantId}, ${now}, ${now})
+          INSERT INTO role_permissions (role_id, permission_id, tenant_id)
+          VALUES (${roleId}, ${permId}, ${tenantId})
+          ON CONFLICT (role_id, permission_id) DO NOTHING
         `;
       }
 
@@ -175,8 +178,8 @@ export async function roleRoutes(
         tenantId,
         permissions,
         isDefault: false,
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
+        createdAt: nowIso,
+        updatedAt: nowIso,
       });
     },
   );
@@ -191,6 +194,7 @@ export async function roleRoutes(
       preHandler: [requireAuth, requirePermission(ROLE_READ)],
       schema: {
         tags: ['roles'],
+        description: 'รายการบทบาทและสิทธิ์ทั้งหมดของ tenant — List all roles and their permissions for the tenant',
         summary: 'List all roles for the tenant',
         response: {
           200: {
@@ -230,8 +234,8 @@ export async function roleRoutes(
           tenantId: role.tenant_id,
           permissions: permRows.map((r) => r.permission_id),
           isDefault: DEFAULT_ROLE_NAMES.has(role.name),
-          createdAt: role.created_at,
-          updatedAt: role.updated_at,
+          createdAt: toISO(role.created_at),
+          updatedAt: toISO(role.updated_at),
         });
       }
 
@@ -249,6 +253,7 @@ export async function roleRoutes(
       preHandler: [requireAuth, requirePermission(ROLE_ASSIGN)],
       schema: {
         tags: ['roles'],
+        description: 'อัปเดตสิทธิ์ของบทบาท — Update the permissions assigned to a role',
         summary: 'Update role permissions',
         params: {
           type: 'object',
@@ -283,13 +288,13 @@ export async function roleRoutes(
       }
 
       const role = roleRows[0]!;
-      const now = new Date();
       const finalName = name ?? role.name;
+      const nowIso = new Date().toISOString();
 
       // Update role
       await fastify.sql`
         UPDATE roles
-        SET name = ${finalName}, updated_at = ${now}
+        SET name = ${finalName}, updated_at = NOW()
         WHERE id = ${id}
       `;
 
@@ -301,14 +306,15 @@ export async function roleRoutes(
 
       for (const permId of permissions) {
         await fastify.sql`
-          INSERT INTO permissions (id, name, description, created_at)
-          VALUES (${permId}, ${permId}, ${'Custom permission: ' + permId}, ${now})
+          INSERT INTO permissions (id, name, description)
+          VALUES (${permId}, ${permId}, ${'Custom permission: ' + permId})
           ON CONFLICT (id) DO NOTHING
         `;
 
         await fastify.sql`
-          INSERT INTO role_permissions (role_id, permission_id, tenant_id, created_at, updated_at)
-          VALUES (${id}, ${permId}, ${tenantId}, ${now}, ${now})
+          INSERT INTO role_permissions (role_id, permission_id, tenant_id)
+          VALUES (${id}, ${permId}, ${tenantId})
+          ON CONFLICT (role_id, permission_id) DO NOTHING
         `;
       }
 
@@ -318,8 +324,8 @@ export async function roleRoutes(
         tenantId,
         permissions,
         isDefault: DEFAULT_ROLE_NAMES.has(finalName),
-        createdAt: role.created_at,
-        updatedAt: now.toISOString(),
+        createdAt: toISO(role.created_at),
+        updatedAt: nowIso,
       };
     },
   );
@@ -334,6 +340,7 @@ export async function roleRoutes(
       preHandler: [requireAuth, requirePermission(ROLE_ASSIGN)],
       schema: {
         tags: ['roles'],
+        description: 'ลบบทบาทที่กำหนดเอง (บทบาทเริ่มต้นไม่สามารถลบได้) — Delete a custom role (default roles cannot be deleted)',
         summary: 'Delete a custom role (default roles cannot be deleted)',
         params: {
           type: 'object',
@@ -371,6 +378,18 @@ export async function roleRoutes(
       if (DEFAULT_ROLE_NAMES.has(role.name)) {
         throw new ForbiddenError({
           detail: `Default role "${role.name}" cannot be deleted.`,
+        });
+      }
+
+      // RBAC-006: Prevent deletion of roles that have users assigned
+      const userRows = await fastify.sql<{ user_id: string }[]>`
+        SELECT user_id FROM user_roles
+        WHERE role_id = ${id} AND tenant_id = ${tenantId}
+        LIMIT 1
+      `;
+      if (userRows.length > 0) {
+        throw new ConflictError({
+          detail: `Role "${role.name}" cannot be deleted because it has users assigned.`,
         });
       }
 

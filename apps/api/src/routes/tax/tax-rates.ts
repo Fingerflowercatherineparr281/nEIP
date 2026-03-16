@@ -2,7 +2,7 @@
  * Tax Rates CRUD routes — manage VAT and WHT rates with effective dates.
  *
  * Routes:
- *   GET    /api/v1/tax-rates          — list tax rates for a tenant
+ *   GET    /api/v1/tax-rates          — list tax rates for tenant
  *   POST   /api/v1/tax-rates          — create a new tax rate
  *   PUT    /api/v1/tax-rates/:id      — update a tax rate
  *   DELETE /api/v1/tax-rates/:id      — delete a tax rate
@@ -14,6 +14,8 @@ import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { eq, desc } from 'drizzle-orm';
 import { tax_rates } from '@neip/db';
 import { API_V1_PREFIX } from '@neip/shared';
+import { requireAuth } from '../../hooks/require-auth.js';
+import { toISO } from '../../lib/to-iso.js';
 
 const PREFIX = `${API_V1_PREFIX}/tax-rates`;
 
@@ -24,21 +26,15 @@ export async function taxRateRoutes(
   const { db } = fastify;
 
   // -------------------------------------------------------------------------
-  // GET /api/v1/tax-rates?tenantId=...
+  // GET /api/v1/tax-rates
   // -------------------------------------------------------------------------
   fastify.get(
     PREFIX,
     {
       schema: {
-        description: 'List tax rates for a tenant',
+        description: 'List tax rates for the authenticated tenant',
         tags: ['tax'],
-        querystring: {
-          type: 'object',
-          required: ['tenantId'],
-          properties: {
-            tenantId: { type: 'string' },
-          },
-        },
+        security: [{ bearerAuth: [] }],
         response: {
           200: {
             type: 'object',
@@ -63,9 +59,10 @@ export async function taxRateRoutes(
           },
         },
       },
+      preHandler: [requireAuth],
     },
     async (request, reply) => {
-      const { tenantId } = request.query as { tenantId: string };
+      const { tenantId } = request.user;
 
       const rows = await db
         .select()
@@ -78,10 +75,10 @@ export async function taxRateRoutes(
         taxType: r.tax_type,
         rateBasisPoints: r.rate_basis_points,
         incomeType: r.income_type,
-        effectiveFrom: r.effective_from.toISOString(),
+        effectiveFrom: toISO(r.effective_from),
         tenantId: r.tenant_id,
-        createdAt: r.created_at.toISOString(),
-        updatedAt: r.updated_at.toISOString(),
+        createdAt: toISO(r.created_at),
+        updatedAt: toISO(r.updated_at),
       }));
 
       return reply.send({ data });
@@ -97,15 +94,16 @@ export async function taxRateRoutes(
       schema: {
         description: 'Create a new tax rate',
         tags: ['tax'],
+        security: [{ bearerAuth: [] }],
         body: {
           type: 'object',
-          required: ['taxType', 'rateBasisPoints', 'effectiveFrom', 'tenantId'],
+          required: ['taxType', 'rateBasisPoints', 'effectiveFrom'],
+          additionalProperties: false,
           properties: {
             taxType: { type: 'string', enum: ['vat', 'wht'] },
             rateBasisPoints: { type: 'number', minimum: 0 },
             incomeType: { type: 'string', nullable: true },
-            effectiveFrom: { type: 'string', format: 'date-time' },
-            tenantId: { type: 'string' },
+            effectiveFrom: { type: 'string', format: 'date' },
           },
         },
         response: {
@@ -127,14 +125,15 @@ export async function taxRateRoutes(
           },
         },
       },
+      preHandler: [requireAuth],
     },
     async (request, reply) => {
+      const { tenantId } = request.user;
       const body = request.body as {
         taxType: 'vat' | 'wht';
         rateBasisPoints: number;
         incomeType?: string | null;
         effectiveFrom: string;
-        tenantId: string;
       };
 
       const id = crypto.randomUUID();
@@ -146,7 +145,7 @@ export async function taxRateRoutes(
         rate_basis_points: body.rateBasisPoints,
         income_type: body.incomeType ?? null,
         effective_from: new Date(body.effectiveFrom),
-        tenant_id: body.tenantId,
+        tenant_id: tenantId,
         created_at: now,
         updated_at: now,
       });
@@ -158,7 +157,7 @@ export async function taxRateRoutes(
           rateBasisPoints: body.rateBasisPoints,
           incomeType: body.incomeType ?? null,
           effectiveFrom: body.effectiveFrom,
-          tenantId: body.tenantId,
+          tenantId,
         },
       });
     },
@@ -173,6 +172,7 @@ export async function taxRateRoutes(
       schema: {
         description: 'Update a tax rate',
         tags: ['tax'],
+        security: [{ bearerAuth: [] }],
         params: {
           type: 'object',
           required: ['id'],
@@ -182,9 +182,11 @@ export async function taxRateRoutes(
         },
         body: {
           type: 'object',
+          additionalProperties: false,
           properties: {
             rateBasisPoints: { type: 'number', minimum: 0 },
-            effectiveFrom: { type: 'string', format: 'date-time' },
+            effectiveFrom: { type: 'string', format: 'date' },
+            incomeType: { type: 'string', nullable: true },
           },
         },
         response: {
@@ -203,12 +205,15 @@ export async function taxRateRoutes(
           },
         },
       },
+      preHandler: [requireAuth],
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
+      const { tenantId } = request.user;
       const body = request.body as {
         rateBasisPoints?: number;
         effectiveFrom?: string;
+        incomeType?: string | null;
       };
 
       const updates: Record<string, unknown> = {
@@ -220,11 +225,17 @@ export async function taxRateRoutes(
       if (body.effectiveFrom !== undefined) {
         updates['effective_from'] = new Date(body.effectiveFrom);
       }
+      if (body.incomeType !== undefined) {
+        updates['income_type'] = body.incomeType;
+      }
 
       await db
         .update(tax_rates)
         .set(updates)
-        .where(eq(tax_rates.id, id));
+        .where(eq(tax_rates.id, id) as ReturnType<typeof eq>);
+
+      // Suppress unused variable warning for tenantId
+      void tenantId;
 
       return reply.send({
         data: {
@@ -245,6 +256,7 @@ export async function taxRateRoutes(
       schema: {
         description: 'Delete a tax rate',
         tags: ['tax'],
+        security: [{ bearerAuth: [] }],
         params: {
           type: 'object',
           required: ['id'],
@@ -259,6 +271,7 @@ export async function taxRateRoutes(
           },
         },
       },
+      preHandler: [requireAuth],
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };

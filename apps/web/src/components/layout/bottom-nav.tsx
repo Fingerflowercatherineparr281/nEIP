@@ -14,10 +14,10 @@ interface BottomNavTab {
 }
 
 const tabs: BottomNavTab[] = [
-  { label: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { label: 'Approvals', href: '/approvals', icon: ClipboardCheck, badge: 5 },
-  { label: 'AI Chat', href: '/ai-chat', icon: Bot },
-  { label: 'More', href: '/more', icon: MoreHorizontal },
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Approvals', href: '/approvals', icon: ClipboardCheck },
+  { label: 'Import', href: '/import', icon: Bot },
+  { label: 'More', href: '/settings', icon: MoreHorizontal },
 ];
 
 export function BottomNav(): React.JSX.Element {

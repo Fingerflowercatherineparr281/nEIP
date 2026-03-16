@@ -448,3 +448,74 @@ BEGIN
   END LOOP;
 END;
 $$;
+
+-- ============================================================
+-- Seed: permissions (global — no tenant_id)
+-- ============================================================
+
+INSERT INTO permissions (id, name, description) VALUES
+('gl:journal:create', 'gl:journal:create', 'Create journal entries'),
+('gl:journal:read', 'gl:journal:read', 'View journal entries'),
+('gl:journal:update', 'gl:journal:update', 'Update journal entries'),
+('gl:journal:delete', 'gl:journal:delete', 'Delete journal entries'),
+('gl:journal:post', 'gl:journal:post', 'Post journal entries'),
+('gl:journal:reverse', 'gl:journal:reverse', 'Reverse journal entries'),
+('gl:account:create', 'gl:account:create', 'Create chart of accounts'),
+('gl:account:read', 'gl:account:read', 'View chart of accounts'),
+('gl:account:update', 'gl:account:update', 'Update chart of accounts'),
+('gl:account:delete', 'gl:account:delete', 'Delete chart of accounts'),
+('gl:period:close', 'gl:period:close', 'Close fiscal periods'),
+('gl:period:read', 'gl:period:read', 'View fiscal periods'),
+('ar:invoice:create', 'ar:invoice:create', 'Create invoices'),
+('ar:invoice:read', 'ar:invoice:read', 'View invoices'),
+('ar:invoice:update', 'ar:invoice:update', 'Update invoices'),
+('ar:invoice:delete', 'ar:invoice:delete', 'Delete invoices'),
+('ar:invoice:send', 'ar:invoice:send', 'Send invoices'),
+('ar:invoice:void', 'ar:invoice:void', 'Void invoices'),
+('ar:payment:create', 'ar:payment:create', 'Create payments'),
+('ar:payment:read', 'ar:payment:read', 'View payments'),
+('ar:payment:update', 'ar:payment:update', 'Update payments'),
+('ar:customer:create', 'ar:customer:create', 'Create customers'),
+('ar:customer:read', 'ar:customer:read', 'View customers'),
+('ar:customer:update', 'ar:customer:update', 'Update customers'),
+('ar:customer:delete', 'ar:customer:delete', 'Delete customers'),
+('ap:bill:create', 'ap:bill:create', 'Create bills'),
+('ap:bill:read', 'ap:bill:read', 'View bills'),
+('ap:bill:update', 'ap:bill:update', 'Update bills'),
+('ap:bill:delete', 'ap:bill:delete', 'Delete bills'),
+('ap:bill:approve', 'ap:bill:approve', 'Approve bills'),
+('ap:payment:create', 'ap:payment:create', 'Create bill payments'),
+('ap:payment:read', 'ap:payment:read', 'View bill payments'),
+('ap:payment:update', 'ap:payment:update', 'Update bill payments'),
+('ap:vendor:create', 'ap:vendor:create', 'Create vendors'),
+('ap:vendor:read', 'ap:vendor:read', 'View vendors'),
+('ap:vendor:update', 'ap:vendor:update', 'Update vendors'),
+('ap:vendor:delete', 'ap:vendor:delete', 'Delete vendors'),
+('hitl:queue:read', 'hitl:queue:read', 'View HITL queue'),
+('hitl:approve', 'hitl:approve', 'Approve HITL actions'),
+('hitl:reject', 'hitl:reject', 'Reject HITL actions'),
+('report:gl:read', 'report:gl:read', 'View GL reports'),
+('report:ar:read', 'report:ar:read', 'View AR reports'),
+('report:ap:read', 'report:ap:read', 'View AP reports'),
+('report:trial-balance:read', 'report:trial-balance:read', 'View trial balance'),
+('report:balance-sheet:read', 'report:balance-sheet:read', 'View balance sheet'),
+('report:income-statement:read', 'report:income-statement:read', 'View income statement'),
+('user:invite', 'user:invite', 'Invite users'),
+('user:read', 'user:read', 'View users'),
+('user:update', 'user:update', 'Update users'),
+('user:deactivate', 'user:deactivate', 'Deactivate users'),
+('role:assign', 'role:assign', 'Assign roles'),
+('role:read', 'role:read', 'View roles'),
+('role:create', 'role:create', 'Create roles'),
+('role:update', 'role:update', 'Update roles'),
+('role:delete', 'role:delete', 'Delete roles'),
+('webhook:create', 'webhook:create', 'Create webhooks'),
+('webhook:read', 'webhook:read', 'View webhooks'),
+('webhook:delete', 'webhook:delete', 'Delete webhooks'),
+('data:import', 'data:import', 'Import data'),
+('data:export', 'data:export', 'Export data')
+ON CONFLICT (name) DO NOTHING;
+
+-- Default tenant for self-registration
+INSERT INTO tenants (id, name, slug) VALUES ('default', 'Default', 'default')
+ON CONFLICT (id) DO NOTHING;

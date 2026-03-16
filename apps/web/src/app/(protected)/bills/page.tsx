@@ -25,16 +25,16 @@ import type { DocumentStatusValue } from '@/components/domain/document-status';
 interface Bill {
   id: string;
   documentNumber: string;
-  vendorName: string;
+  vendorId: string;
   /** Amount in satang */
-  totalAmount: number;
-  paidAmount: number;
+  totalSatang: number;
+  paidSatang: number;
   dueDate: string;
   status: DocumentStatusValue;
 }
 
 interface BillListResponse {
-  data: Bill[];
+  items: Bill[];
   total: number;
 }
 
@@ -77,7 +77,7 @@ export default function BillsPage(): React.JSX.Element {
   }, [search, status, dateFrom, dateTo]);
 
   const { data, loading, refetch } = useApi<BillListResponse>('/bills', params);
-  const bills = data?.data ?? [];
+  const bills = data?.items ?? [];
 
   const handleVoid = useCallback(async () => {
     if (!voidTarget) return;
@@ -173,9 +173,11 @@ export default function BillsPage(): React.JSX.Element {
                   <td className="px-4 py-3 font-mono-figures font-medium">
                     {bill.documentNumber}
                   </td>
-                  <td className="px-4 py-3">{bill.vendorName}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--color-muted-foreground)]">
+                    {bill.vendorId}
+                  </td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(bill.totalAmount)} size="sm" />
+                    <MoneyDisplay amount={BigInt(bill.totalSatang)} size="sm" />
                   </td>
                   <td className={cn(
                     'px-4 py-3',

@@ -24,17 +24,22 @@ import type { DocumentStatusValue } from '@/components/domain/document-status';
 
 interface Invoice {
   id: string;
-  documentNumber: string;
-  customerName: string;
+  invoiceNumber: string;
+  customerId: string;
   /** Amount in satang */
-  totalAmount: number;
-  issueDate: string;
+  totalSatang: number;
   dueDate: string;
-  status: DocumentStatusValue;
+  status: string;
+}
+
+/** Map API status to DocumentStatusValue (API uses 'void', UI uses 'voided') */
+function mapStatus(s: string): DocumentStatusValue {
+  if (s === 'void') return 'voided';
+  return s as DocumentStatusValue;
 }
 
 interface InvoiceListResponse {
-  data: Invoice[];
+  items: Invoice[];
   total: number;
 }
 
@@ -74,14 +79,14 @@ export default function InvoicesPage(): React.JSX.Element {
   }, [search, status, dateFrom, dateTo]);
 
   const { data, loading, refetch } = useApi<InvoiceListResponse>('/invoices', params);
-  const invoices = data?.data ?? [];
+  const invoices = data?.items ?? [];
 
   const handleVoid = useCallback(async () => {
     if (!voidTarget) return;
     setVoiding(true);
     try {
       await api.post(`/invoices/${voidTarget.id}/void`);
-      showToast.success(`Invoice ${voidTarget.documentNumber} voided`);
+      showToast.success(`Invoice ${voidTarget.invoiceNumber} voided`);
       setVoidTarget(null);
       refetch();
     } catch {
@@ -138,10 +143,9 @@ export default function InvoicesPage(): React.JSX.Element {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--color-border)] text-left text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                <th className="px-4 py-3">Doc Number</th>
-                <th className="px-4 py-3">Customer</th>
+                <th className="px-4 py-3">Invoice Number</th>
+                <th className="px-4 py-3">Customer ID</th>
                 <th className="px-4 py-3 text-right">Amount</th>
-                <th className="px-4 py-3">Issue Date</th>
                 <th className="px-4 py-3">Due Date</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Actions</th>
@@ -154,14 +158,13 @@ export default function InvoicesPage(): React.JSX.Element {
                   className="border-b border-[var(--color-border)] transition-colors hover:bg-[var(--color-accent)]/30"
                 >
                   <td className="px-4 py-3 font-mono-figures font-medium">
-                    {inv.documentNumber}
+                    {inv.invoiceNumber}
                   </td>
-                  <td className="px-4 py-3">{inv.customerName}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--color-muted-foreground)]">
+                    {inv.customerId}
+                  </td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(inv.totalAmount)} size="sm" />
-                  </td>
-                  <td className="px-4 py-3 text-[var(--color-muted-foreground)]">
-                    {new Date(inv.issueDate).toLocaleDateString('th-TH')}
+                    <MoneyDisplay amount={BigInt(inv.totalSatang ?? 0)} size="sm" />
                   </td>
                   <td className={cn(
                     'px-4 py-3',
@@ -172,7 +175,7 @@ export default function InvoicesPage(): React.JSX.Element {
                     {new Date(inv.dueDate).toLocaleDateString('th-TH')}
                   </td>
                   <td className="px-4 py-3">
-                    <DocumentStatus status={inv.status} size="sm" />
+                    <DocumentStatus status={mapStatus(inv.status)} size="sm" />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
@@ -206,7 +209,7 @@ export default function InvoicesPage(): React.JSX.Element {
         open={voidTarget !== null}
         onOpenChange={(open) => { if (!open) setVoidTarget(null); }}
         title="Void Invoice"
-        description={`Are you sure you want to void invoice ${voidTarget?.documentNumber ?? ''}? This action cannot be undone.`}
+        description={`Are you sure you want to void invoice ${voidTarget?.invoiceNumber ?? ''}? This action cannot be undone.`}
         confirmLabel="Void Invoice"
         confirmVariant="destructive"
         onConfirm={handleVoid}

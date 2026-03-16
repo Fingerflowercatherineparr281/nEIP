@@ -43,6 +43,37 @@ export const AR_INVOICE_UPDATE = 'ar:invoice:update' as const;
 export const AR_INVOICE_DELETE = 'ar:invoice:delete' as const;
 export const AR_INVOICE_SEND = 'ar:invoice:send' as const;
 export const AR_INVOICE_VOID = 'ar:invoice:void' as const;
+
+// Quotations (ใบเสนอราคา)
+export const AR_QUOTATION_CREATE = 'ar:quotation:create' as const;
+export const AR_QUOTATION_READ = 'ar:quotation:read' as const;
+export const AR_QUOTATION_UPDATE = 'ar:quotation:update' as const;
+export const AR_QUOTATION_SEND = 'ar:quotation:send' as const;
+export const AR_QUOTATION_APPROVE = 'ar:quotation:approve' as const;
+export const AR_QUOTATION_CONVERT = 'ar:quotation:convert' as const;
+
+// Sales Order (ใบสั่งขาย / SO)
+export const AR_SO_CREATE = 'ar:so:create' as const;
+export const AR_SO_READ = 'ar:so:read' as const;
+export const AR_SO_UPDATE = 'ar:so:update' as const;
+export const AR_SO_CONFIRM = 'ar:so:confirm' as const;
+
+// Delivery Order (ใบส่งของ / DO)
+export const AR_DO_CREATE = 'ar:do:create' as const;
+export const AR_DO_READ = 'ar:do:read' as const;
+export const AR_DO_DELIVER = 'ar:do:deliver' as const;
+
+// Receipt (ใบเสร็จรับเงิน)
+export const AR_RECEIPT_CREATE = 'ar:receipt:create' as const;
+export const AR_RECEIPT_READ = 'ar:receipt:read' as const;
+export const AR_RECEIPT_VOID = 'ar:receipt:void' as const;
+
+// Credit Note (ใบลดหนี้ / CN)
+export const AR_CN_CREATE = 'ar:cn:create' as const;
+export const AR_CN_READ = 'ar:cn:read' as const;
+export const AR_CN_ISSUE = 'ar:cn:issue' as const;
+export const AR_CN_VOID = 'ar:cn:void' as const;
+
 export const AR_PAYMENT_CREATE = 'ar:payment:create' as const;
 export const AR_PAYMENT_READ = 'ar:payment:read' as const;
 export const AR_PAYMENT_UPDATE = 'ar:payment:update' as const;
@@ -68,6 +99,14 @@ export const AP_VENDOR_READ = 'ap:vendor:read' as const;
 export const AP_VENDOR_UPDATE = 'ap:vendor:update' as const;
 export const AP_VENDOR_DELETE = 'ap:vendor:delete' as const;
 
+// Purchase Order (ใบสั่งซื้อ / PO)
+export const AP_PO_CREATE = 'ap:po:create' as const;
+export const AP_PO_READ = 'ap:po:read' as const;
+export const AP_PO_UPDATE = 'ap:po:update' as const;
+export const AP_PO_SEND = 'ap:po:send' as const;
+export const AP_PO_RECEIVE = 'ap:po:receive' as const;
+export const AP_PO_CONVERT = 'ap:po:convert' as const;
+
 // ---------------------------------------------------------------------------
 // Human-in-the-loop (HITL) — AI action approval queue
 // ---------------------------------------------------------------------------
@@ -86,6 +125,7 @@ export const REPORT_AP_READ = 'report:ap:read' as const;
 export const REPORT_TRIAL_BALANCE_READ = 'report:trial-balance:read' as const;
 export const REPORT_BALANCE_SHEET_READ = 'report:balance-sheet:read' as const;
 export const REPORT_INCOME_STATEMENT_READ = 'report:income-statement:read' as const;
+export const REPORT_PNL_COMPARISON_READ = 'report:pnl-comparison:read' as const;
 
 // ---------------------------------------------------------------------------
 // Import / Export (Stories 8.1, 8.3)
@@ -109,12 +149,115 @@ export const ROLE_UPDATE = 'role:update' as const;
 export const ROLE_DELETE = 'role:delete' as const;
 
 // ---------------------------------------------------------------------------
+// Fixed Assets (FI-AA)
+// ---------------------------------------------------------------------------
+
+export const FI_ASSET_CREATE = 'fi:asset:create' as const;
+export const FI_ASSET_READ = 'fi:asset:read' as const;
+export const FI_ASSET_UPDATE = 'fi:asset:update' as const;
+export const FI_ASSET_DEPRECIATE = 'fi:asset:depreciate' as const;
+export const FI_ASSET_DISPOSE = 'fi:asset:dispose' as const;
+
+// ---------------------------------------------------------------------------
+// Bank Reconciliation (FI-BL)
+// ---------------------------------------------------------------------------
+
+export const FI_BANK_CREATE = 'fi:bank:create' as const;
+export const FI_BANK_READ = 'fi:bank:read' as const;
+export const FI_BANK_IMPORT = 'fi:bank:import' as const;
+export const FI_BANK_RECONCILE = 'fi:bank:reconcile' as const;
+
+// ---------------------------------------------------------------------------
+// Withholding Tax Certificates (WHT)
+// ---------------------------------------------------------------------------
+
+export const FI_WHT_CREATE = 'fi:wht:create' as const;
+export const FI_WHT_READ = 'fi:wht:read' as const;
+export const FI_WHT_ISSUE = 'fi:wht:issue' as const;
+export const FI_WHT_VOID = 'fi:wht:void' as const;
+export const FI_WHT_FILE = 'fi:wht:file' as const;
+
+// ---------------------------------------------------------------------------
+// Cost Centers (CO)
+// ---------------------------------------------------------------------------
+
+export const CO_COST_CENTER_CREATE = 'co:cost-center:create' as const;
+export const CO_COST_CENTER_READ = 'co:cost-center:read' as const;
+export const CO_COST_CENTER_UPDATE = 'co:cost-center:update' as const;
+
+// ---------------------------------------------------------------------------
+// Profit Centers (CO)
+// ---------------------------------------------------------------------------
+
+export const CO_PROFIT_CENTER_CREATE = 'co:profit-center:create' as const;
+export const CO_PROFIT_CENTER_READ = 'co:profit-center:read' as const;
+export const CO_PROFIT_CENTER_UPDATE = 'co:profit-center:update' as const;
+
+// ---------------------------------------------------------------------------
 // Webhooks (Story 13.1)
 // ---------------------------------------------------------------------------
 
 export const WEBHOOK_CREATE = 'webhook:create' as const;
 export const WEBHOOK_READ = 'webhook:read' as const;
 export const WEBHOOK_DELETE = 'webhook:delete' as const;
+
+// ---------------------------------------------------------------------------
+// Inventory / MM-IM
+// ---------------------------------------------------------------------------
+
+export const INV_PRODUCT_CREATE   = 'inventory:product:create'   as const;
+export const INV_PRODUCT_READ     = 'inventory:product:read'     as const;
+export const INV_PRODUCT_UPDATE   = 'inventory:product:update'   as const;
+export const INV_WAREHOUSE_CREATE = 'inventory:warehouse:create' as const;
+export const INV_WAREHOUSE_READ   = 'inventory:warehouse:read'   as const;
+export const INV_WAREHOUSE_UPDATE = 'inventory:warehouse:update' as const;
+export const INV_MOVEMENT_CREATE  = 'inventory:movement:create'  as const;
+export const INV_MOVEMENT_READ    = 'inventory:movement:read'    as const;
+export const INV_LEVEL_READ       = 'inventory:level:read'       as const;
+export const INV_VALUATION_READ   = 'inventory:valuation:read'   as const;
+
+// ---------------------------------------------------------------------------
+// CRM — Contacts
+// ---------------------------------------------------------------------------
+
+export const CRM_CONTACT_CREATE = 'crm:contact:create' as const;
+export const CRM_CONTACT_READ   = 'crm:contact:read'   as const;
+export const CRM_CONTACT_UPDATE = 'crm:contact:update' as const;
+export const CRM_CONTACT_DELETE = 'crm:contact:delete' as const;
+
+// ---------------------------------------------------------------------------
+// HR — Employees & Departments
+// ---------------------------------------------------------------------------
+
+export const HR_DEPT_CREATE   = 'hr:department:create' as const;
+export const HR_DEPT_READ     = 'hr:department:read'   as const;
+export const HR_DEPT_UPDATE   = 'hr:department:update' as const;
+export const HR_EMP_CREATE    = 'hr:employee:create'   as const;
+export const HR_EMP_READ      = 'hr:employee:read'     as const;
+export const HR_EMP_UPDATE    = 'hr:employee:update'   as const;
+export const HR_EMP_RESIGN      = 'hr:employee:resign'     as const;
+export const HR_EMP_ANONYMIZE   = 'hr:employee:anonymize'  as const;
+
+// ---------------------------------------------------------------------------
+// HR — Payroll
+// ---------------------------------------------------------------------------
+
+export const HR_PAYROLL_CREATE    = 'hr:payroll:create'    as const;
+export const HR_PAYROLL_READ      = 'hr:payroll:read'      as const;
+export const HR_PAYROLL_CALCULATE = 'hr:payroll:calculate' as const;
+export const HR_PAYROLL_APPROVE   = 'hr:payroll:approve'   as const;
+export const HR_PAYROLL_PAY       = 'hr:payroll:pay'       as const;
+
+// ---------------------------------------------------------------------------
+// HR — Leave Management
+// ---------------------------------------------------------------------------
+
+export const HR_LEAVE_TYPE_CREATE     = 'hr:leave:type:create'      as const;
+export const HR_LEAVE_TYPE_READ       = 'hr:leave:type:read'        as const;
+export const HR_LEAVE_REQUEST_CREATE  = 'hr:leave:request:create'   as const;
+export const HR_LEAVE_REQUEST_READ    = 'hr:leave:request:read'     as const;
+export const HR_LEAVE_REQUEST_APPROVE = 'hr:leave:request:approve'  as const;
+export const HR_LEAVE_REQUEST_REJECT  = 'hr:leave:request:reject'   as const;
 
 // ---------------------------------------------------------------------------
 // Union type — exhaustive set of all permission strings
@@ -139,6 +282,26 @@ export type Permission =
   | typeof AR_INVOICE_DELETE
   | typeof AR_INVOICE_SEND
   | typeof AR_INVOICE_VOID
+  | typeof AR_QUOTATION_CREATE
+  | typeof AR_QUOTATION_READ
+  | typeof AR_QUOTATION_UPDATE
+  | typeof AR_QUOTATION_SEND
+  | typeof AR_QUOTATION_APPROVE
+  | typeof AR_QUOTATION_CONVERT
+  | typeof AR_SO_CREATE
+  | typeof AR_SO_READ
+  | typeof AR_SO_UPDATE
+  | typeof AR_SO_CONFIRM
+  | typeof AR_DO_CREATE
+  | typeof AR_DO_READ
+  | typeof AR_DO_DELIVER
+  | typeof AR_RECEIPT_CREATE
+  | typeof AR_RECEIPT_READ
+  | typeof AR_RECEIPT_VOID
+  | typeof AR_CN_CREATE
+  | typeof AR_CN_READ
+  | typeof AR_CN_ISSUE
+  | typeof AR_CN_VOID
   | typeof AR_PAYMENT_CREATE
   | typeof AR_PAYMENT_READ
   | typeof AR_PAYMENT_UPDATE
@@ -158,6 +321,12 @@ export type Permission =
   | typeof AP_VENDOR_READ
   | typeof AP_VENDOR_UPDATE
   | typeof AP_VENDOR_DELETE
+  | typeof AP_PO_CREATE
+  | typeof AP_PO_READ
+  | typeof AP_PO_UPDATE
+  | typeof AP_PO_SEND
+  | typeof AP_PO_RECEIVE
+  | typeof AP_PO_CONVERT
   | typeof HITL_QUEUE_READ
   | typeof HITL_APPROVE
   | typeof HITL_REJECT
@@ -167,6 +336,7 @@ export type Permission =
   | typeof REPORT_TRIAL_BALANCE_READ
   | typeof REPORT_BALANCE_SHEET_READ
   | typeof REPORT_INCOME_STATEMENT_READ
+  | typeof REPORT_PNL_COMPARISON_READ
   | typeof USER_INVITE
   | typeof USER_READ
   | typeof USER_UPDATE
@@ -180,7 +350,65 @@ export type Permission =
   | typeof WEBHOOK_READ
   | typeof WEBHOOK_DELETE
   | typeof DATA_IMPORT
-  | typeof DATA_EXPORT;
+  | typeof DATA_EXPORT
+  | typeof FI_ASSET_CREATE
+  | typeof FI_ASSET_READ
+  | typeof FI_ASSET_UPDATE
+  | typeof FI_ASSET_DEPRECIATE
+  | typeof FI_ASSET_DISPOSE
+  | typeof FI_BANK_CREATE
+  | typeof FI_BANK_READ
+  | typeof FI_BANK_IMPORT
+  | typeof FI_BANK_RECONCILE
+  | typeof FI_WHT_CREATE
+  | typeof FI_WHT_READ
+  | typeof FI_WHT_ISSUE
+  | typeof FI_WHT_VOID
+  | typeof FI_WHT_FILE
+  | typeof CO_COST_CENTER_CREATE
+  | typeof CO_COST_CENTER_READ
+  | typeof CO_COST_CENTER_UPDATE
+  | typeof CO_PROFIT_CENTER_CREATE
+  | typeof CO_PROFIT_CENTER_READ
+  | typeof CO_PROFIT_CENTER_UPDATE
+  // Inventory
+  | typeof INV_PRODUCT_CREATE
+  | typeof INV_PRODUCT_READ
+  | typeof INV_PRODUCT_UPDATE
+  | typeof INV_WAREHOUSE_CREATE
+  | typeof INV_WAREHOUSE_READ
+  | typeof INV_WAREHOUSE_UPDATE
+  | typeof INV_MOVEMENT_CREATE
+  | typeof INV_MOVEMENT_READ
+  | typeof INV_LEVEL_READ
+  | typeof INV_VALUATION_READ
+  // CRM
+  | typeof CRM_CONTACT_CREATE
+  | typeof CRM_CONTACT_READ
+  | typeof CRM_CONTACT_UPDATE
+  | typeof CRM_CONTACT_DELETE
+  // HR — Employees & Departments
+  | typeof HR_DEPT_CREATE
+  | typeof HR_DEPT_READ
+  | typeof HR_DEPT_UPDATE
+  | typeof HR_EMP_CREATE
+  | typeof HR_EMP_READ
+  | typeof HR_EMP_UPDATE
+  | typeof HR_EMP_RESIGN
+  | typeof HR_EMP_ANONYMIZE
+  // HR — Payroll
+  | typeof HR_PAYROLL_CREATE
+  | typeof HR_PAYROLL_READ
+  | typeof HR_PAYROLL_CALCULATE
+  | typeof HR_PAYROLL_APPROVE
+  | typeof HR_PAYROLL_PAY
+  // HR — Leave
+  | typeof HR_LEAVE_TYPE_CREATE
+  | typeof HR_LEAVE_TYPE_READ
+  | typeof HR_LEAVE_REQUEST_CREATE
+  | typeof HR_LEAVE_REQUEST_READ
+  | typeof HR_LEAVE_REQUEST_APPROVE
+  | typeof HR_LEAVE_REQUEST_REJECT;
 
 // ---------------------------------------------------------------------------
 // Permission sets — grouped by default role
@@ -206,6 +434,26 @@ export const ALL_PERMISSIONS: readonly Permission[] = [
   AR_INVOICE_DELETE,
   AR_INVOICE_SEND,
   AR_INVOICE_VOID,
+  AR_QUOTATION_CREATE,
+  AR_QUOTATION_READ,
+  AR_QUOTATION_UPDATE,
+  AR_QUOTATION_SEND,
+  AR_QUOTATION_APPROVE,
+  AR_QUOTATION_CONVERT,
+  AR_SO_CREATE,
+  AR_SO_READ,
+  AR_SO_UPDATE,
+  AR_SO_CONFIRM,
+  AR_DO_CREATE,
+  AR_DO_READ,
+  AR_DO_DELIVER,
+  AR_RECEIPT_CREATE,
+  AR_RECEIPT_READ,
+  AR_RECEIPT_VOID,
+  AR_CN_CREATE,
+  AR_CN_READ,
+  AR_CN_ISSUE,
+  AR_CN_VOID,
   AR_PAYMENT_CREATE,
   AR_PAYMENT_READ,
   AR_PAYMENT_UPDATE,
@@ -225,6 +473,12 @@ export const ALL_PERMISSIONS: readonly Permission[] = [
   AP_VENDOR_READ,
   AP_VENDOR_UPDATE,
   AP_VENDOR_DELETE,
+  AP_PO_CREATE,
+  AP_PO_READ,
+  AP_PO_UPDATE,
+  AP_PO_SEND,
+  AP_PO_RECEIVE,
+  AP_PO_CONVERT,
   HITL_QUEUE_READ,
   HITL_APPROVE,
   HITL_REJECT,
@@ -234,6 +488,7 @@ export const ALL_PERMISSIONS: readonly Permission[] = [
   REPORT_TRIAL_BALANCE_READ,
   REPORT_BALANCE_SHEET_READ,
   REPORT_INCOME_STATEMENT_READ,
+  REPORT_PNL_COMPARISON_READ,
   USER_INVITE,
   USER_READ,
   USER_UPDATE,
@@ -248,6 +503,62 @@ export const ALL_PERMISSIONS: readonly Permission[] = [
   WEBHOOK_DELETE,
   DATA_IMPORT,
   DATA_EXPORT,
+  FI_ASSET_CREATE,
+  FI_ASSET_READ,
+  FI_ASSET_UPDATE,
+  FI_ASSET_DEPRECIATE,
+  FI_ASSET_DISPOSE,
+  FI_BANK_CREATE,
+  FI_BANK_READ,
+  FI_BANK_IMPORT,
+  FI_BANK_RECONCILE,
+  FI_WHT_CREATE,
+  FI_WHT_READ,
+  FI_WHT_ISSUE,
+  FI_WHT_VOID,
+  FI_WHT_FILE,
+  CO_COST_CENTER_CREATE,
+  CO_COST_CENTER_READ,
+  CO_COST_CENTER_UPDATE,
+  CO_PROFIT_CENTER_CREATE,
+  CO_PROFIT_CENTER_READ,
+  CO_PROFIT_CENTER_UPDATE,
+  // Inventory
+  INV_PRODUCT_CREATE,
+  INV_PRODUCT_READ,
+  INV_PRODUCT_UPDATE,
+  INV_WAREHOUSE_CREATE,
+  INV_WAREHOUSE_READ,
+  INV_WAREHOUSE_UPDATE,
+  INV_MOVEMENT_CREATE,
+  INV_MOVEMENT_READ,
+  INV_LEVEL_READ,
+  INV_VALUATION_READ,
+  // CRM
+  CRM_CONTACT_CREATE,
+  CRM_CONTACT_READ,
+  CRM_CONTACT_UPDATE,
+  CRM_CONTACT_DELETE,
+  // HR
+  HR_DEPT_CREATE,
+  HR_DEPT_READ,
+  HR_DEPT_UPDATE,
+  HR_EMP_CREATE,
+  HR_EMP_READ,
+  HR_EMP_UPDATE,
+  HR_EMP_RESIGN,
+  HR_EMP_ANONYMIZE,
+  HR_PAYROLL_CREATE,
+  HR_PAYROLL_READ,
+  HR_PAYROLL_CALCULATE,
+  HR_PAYROLL_APPROVE,
+  HR_PAYROLL_PAY,
+  HR_LEAVE_TYPE_CREATE,
+  HR_LEAVE_TYPE_READ,
+  HR_LEAVE_REQUEST_CREATE,
+  HR_LEAVE_REQUEST_READ,
+  HR_LEAVE_REQUEST_APPROVE,
+  HR_LEAVE_REQUEST_REJECT,
 ] as const;
 
 /**
@@ -269,6 +580,26 @@ export const ACCOUNTANT_PERMISSIONS: readonly Permission[] = [
   AR_INVOICE_READ,
   AR_INVOICE_UPDATE,
   AR_INVOICE_SEND,
+  AR_QUOTATION_CREATE,
+  AR_QUOTATION_READ,
+  AR_QUOTATION_UPDATE,
+  AR_QUOTATION_SEND,
+  AR_QUOTATION_APPROVE,
+  AR_QUOTATION_CONVERT,
+  AR_SO_CREATE,
+  AR_SO_READ,
+  AR_SO_UPDATE,
+  AR_SO_CONFIRM,
+  AR_DO_CREATE,
+  AR_DO_READ,
+  AR_DO_DELIVER,
+  AR_RECEIPT_CREATE,
+  AR_RECEIPT_READ,
+  AR_RECEIPT_VOID,
+  AR_CN_CREATE,
+  AR_CN_READ,
+  AR_CN_ISSUE,
+  AR_CN_VOID,
   AR_PAYMENT_CREATE,
   AR_PAYMENT_READ,
   AR_PAYMENT_UPDATE,
@@ -285,6 +616,12 @@ export const ACCOUNTANT_PERMISSIONS: readonly Permission[] = [
   AP_VENDOR_CREATE,
   AP_VENDOR_READ,
   AP_VENDOR_UPDATE,
+  AP_PO_CREATE,
+  AP_PO_READ,
+  AP_PO_UPDATE,
+  AP_PO_SEND,
+  AP_PO_RECEIVE,
+  AP_PO_CONVERT,
   // Reports
   REPORT_GL_READ,
   REPORT_AR_READ,
@@ -292,11 +629,72 @@ export const ACCOUNTANT_PERMISSIONS: readonly Permission[] = [
   REPORT_TRIAL_BALANCE_READ,
   REPORT_BALANCE_SHEET_READ,
   REPORT_INCOME_STATEMENT_READ,
+  REPORT_PNL_COMPARISON_READ,
   // Import / Export
   DATA_IMPORT,
   DATA_EXPORT,
   // User visibility
   USER_READ,
+  // Fixed Assets
+  FI_ASSET_CREATE,
+  FI_ASSET_READ,
+  FI_ASSET_UPDATE,
+  FI_ASSET_DEPRECIATE,
+  FI_ASSET_DISPOSE,
+  // Bank Reconciliation
+  FI_BANK_CREATE,
+  FI_BANK_READ,
+  FI_BANK_IMPORT,
+  FI_BANK_RECONCILE,
+  // WHT
+  FI_WHT_CREATE,
+  FI_WHT_READ,
+  FI_WHT_ISSUE,
+  FI_WHT_VOID,
+  FI_WHT_FILE,
+  // CO
+  CO_COST_CENTER_CREATE,
+  CO_COST_CENTER_READ,
+  CO_COST_CENTER_UPDATE,
+  CO_PROFIT_CENTER_CREATE,
+  CO_PROFIT_CENTER_READ,
+  CO_PROFIT_CENTER_UPDATE,
+  // Inventory
+  INV_PRODUCT_CREATE,
+  INV_PRODUCT_READ,
+  INV_PRODUCT_UPDATE,
+  INV_WAREHOUSE_CREATE,
+  INV_WAREHOUSE_READ,
+  INV_WAREHOUSE_UPDATE,
+  INV_MOVEMENT_CREATE,
+  INV_MOVEMENT_READ,
+  INV_LEVEL_READ,
+  INV_VALUATION_READ,
+  // CRM
+  CRM_CONTACT_CREATE,
+  CRM_CONTACT_READ,
+  CRM_CONTACT_UPDATE,
+  CRM_CONTACT_DELETE,
+  // HR
+  HR_DEPT_CREATE,
+  HR_DEPT_READ,
+  HR_DEPT_UPDATE,
+  HR_EMP_CREATE,
+  HR_EMP_READ,
+  HR_EMP_UPDATE,
+  HR_EMP_RESIGN,
+  HR_EMP_ANONYMIZE,
+  HR_PAYROLL_CREATE,
+  HR_PAYROLL_READ,
+  HR_PAYROLL_CALCULATE,
+  HR_PAYROLL_APPROVE,
+  HR_PAYROLL_PAY,
+  HR_LEAVE_TYPE_CREATE,
+  HR_LEAVE_TYPE_READ,
+  HR_LEAVE_REQUEST_CREATE,
+  HR_LEAVE_REQUEST_READ,
+  HR_LEAVE_REQUEST_APPROVE,
+  HR_LEAVE_REQUEST_REJECT,
 ] as const;
 
 /**

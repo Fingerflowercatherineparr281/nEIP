@@ -4,6 +4,8 @@ import {
   Bot,
   Building2,
   Calendar,
+  ClipboardList,
+  Percent,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -49,6 +51,20 @@ const SECTIONS: SettingSection[] = [
     description: 'Manage fiscal years and open/close periods',
     href: '/settings/fiscal',
     icon: Calendar,
+    ownerOnly: true,
+  },
+  {
+    title: 'Tax Rates',
+    description: 'Configure VAT and Withholding Tax rates',
+    href: '/settings/tax',
+    icon: Percent,
+    ownerOnly: true,
+  },
+  {
+    title: 'Audit Log',
+    description: 'Immutable trail of all system mutations',
+    href: '/settings/audit',
+    icon: ClipboardList,
     ownerOnly: true,
   },
 ];

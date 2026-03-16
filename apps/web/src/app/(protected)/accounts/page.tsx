@@ -19,6 +19,19 @@ import { useAuthStore } from '@/stores/auth-store';
 // Types
 // ---------------------------------------------------------------------------
 
+// API returns camelCase fields directly.
+interface AccountRaw {
+  id: string;
+  code: string;
+  nameTh: string;
+  nameEn: string;
+  accountType: string;
+  isActive: boolean;
+  parentId?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 interface Account {
   id: string;
   code: string;
@@ -29,8 +42,11 @@ interface Account {
 }
 
 interface AccountListResponse {
-  data: Account[];
+  items: AccountRaw[];
   total: number;
+  limit?: number;
+  offset?: number;
+  hasMore?: boolean;
 }
 
 interface AccountFormData {
@@ -273,11 +289,25 @@ export default function AccountsPage(): React.JSX.Element {
     queryFn: () => api.get<AccountListResponse>('/accounts', filters),
   });
 
-  const accounts = data?.data ?? [];
+  // Map API response to UI Account shape
+  const accounts: Account[] = (data?.items ?? []).map((raw) => ({
+    id: raw.id,
+    code: raw.code,
+    nameTh: raw.nameTh,
+    nameEn: raw.nameEn,
+    type: raw.accountType,
+    status: raw.isActive ? 'active' : 'inactive',
+  }));
 
-  // Create mutation
+  // Create mutation — send camelCase to match API
   const createMutation = useMutation({
-    mutationFn: (formData: AccountFormData) => api.post('/accounts', formData),
+    mutationFn: (formData: AccountFormData) =>
+      api.post('/accounts', {
+        code: formData.code,
+        nameTh: formData.nameTh,
+        nameEn: formData.nameEn,
+        accountType: formData.type,
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.accounts(tenantId) });
       setAddDialogOpen(false);
@@ -288,10 +318,14 @@ export default function AccountsPage(): React.JSX.Element {
     },
   });
 
-  // Update mutation (inline edit)
+  // Update mutation (inline edit) — send camelCase to match API
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...body }: { id: string; nameTh?: string; nameEn?: string }) =>
-      api.patch(`/accounts/${id}`, body),
+    mutationFn: ({ id, nameTh, nameEn }: { id: string; nameTh?: string; nameEn?: string }) => {
+      const body: Record<string, string> = {};
+      if (nameTh !== undefined) body['nameTh'] = nameTh;
+      if (nameEn !== undefined) body['nameEn'] = nameEn;
+      return api.patch(`/accounts/${id}`, body);
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.accounts(tenantId) });
       showToast.success('Account updated');

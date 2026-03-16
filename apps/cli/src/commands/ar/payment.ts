@@ -223,22 +223,32 @@ async function paymentList(options: PaymentListOptions): Promise<void> {
  * Build the `ar payment` sub-command group.
  */
 export function buildPaymentCommand(): Command {
-  const payment = new Command('payment').description('Accounts Receivable payment operations');
+  const payment = new Command('payment')
+    .description('จัดการการรับชำระเงินจากลูกค้า (AR) — Accounts Receivable payment operations')
+    .addHelpText('after', `
+Examples:
+  $ neip ar payment create                       # บันทึกการรับชำระเงินใหม่ (interactive)
+  $ neip ar payment list                         # แสดงการรับชำระทั้งหมด
+  $ neip ar payment list --status unallocated    # เฉพาะที่ยังไม่จัดสรร
+  $ neip ar payment list --customer-id <id>      # กรองตามลูกค้า
+
+Payment methods: bank_transfer, check, credit_card, cash, other
+  `);
 
   payment
     .command('create')
-    .description('Record a new customer payment interactively')
+    .description('บันทึกการรับชำระเงินจากลูกค้า (interactive) — Record a new customer payment interactively')
     .action(async () => {
       await paymentCreate();
     });
 
   payment
     .command('list')
-    .description('List payments with optional pagination and filters')
-    .option('--page <number>', 'Page number (1-based)', '1')
-    .option('--page-size <number>', 'Number of payments per page', '20')
-    .option('--customer-id <id>', 'Filter by customer ID')
-    .option('--status <status>', 'Filter by allocation status: unallocated, partially_allocated, fully_allocated, voided')
+    .description('แสดงรายการการรับชำระเงิน — List payments with optional pagination and filters')
+    .option('--page <number>', 'หน้าที่ — Page number', '1')
+    .option('--page-size <number>', 'จำนวนต่อหน้า — Number of payments per page', '20')
+    .option('--customer-id <id>', 'กรองตาม customer ID — Filter by customer ID')
+    .option('--status <status>', 'กรองตามสถานะ: unallocated/partially_allocated/fully_allocated/voided')
     .action(async (options: PaymentListOptions) => {
       await paymentList(options);
     });

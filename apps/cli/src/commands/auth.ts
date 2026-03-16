@@ -10,7 +10,7 @@
 import { createInterface } from 'node:readline';
 import { Command } from 'commander';
 import type { LoginResponse } from '../lib/api-client.js';
-import { ApiError, api } from '../lib/api-client.js';
+import { api } from '../lib/api-client.js';
 import { clearAuth, getConfigValue, patchConfig, readConfig } from '../lib/config-store.js';
 import { printError, printSuccess } from '../output/formatter.js';
 
@@ -21,10 +21,17 @@ import { printError, printSuccess } from '../output/formatter.js';
 /** Data shape printed by `neip whoami`. */
 interface WhoamiData {
   email: string;
-  name: string;
   id: string;
+  tenantId: string;
   apiUrl: string;
   orgId: string;
+}
+
+/** JWT access token payload claims we care about. */
+interface JwtClaims {
+  sub: string;
+  email: string;
+  tenantId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -73,12 +80,31 @@ async function prompt(question: string, hidden = false): Promise<string> {
   });
 }
 
+/**
+ * Decode the payload of a JWT (no signature verification — we trust our own
+ * stored token) and return the claims.  Returns null on any parse error.
+ */
+function decodeJwtPayload(token: string): JwtClaims | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payloadB64 = parts[1];
+    if (payloadB64 === undefined) return null;
+    // Re-pad to a multiple of 4 as required by atob / Buffer
+    const padded = payloadB64 + '='.repeat((4 - (payloadB64.length % 4)) % 4);
+    const decoded = Buffer.from(padded, 'base64').toString('utf8');
+    return JSON.parse(decoded) as JwtClaims;
+  } catch {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // login
 // ---------------------------------------------------------------------------
 
 async function login(): Promise<void> {
-  const currentApiUrl = getConfigValue('apiUrl') ?? 'http://localhost:3000';
+  const currentApiUrl = getConfigValue('apiUrl') ?? 'http://localhost:5400';
 
   const apiUrlInput = await prompt(`API URL [${currentApiUrl}]: `);
   const apiUrl = apiUrlInput.trim() === '' ? currentApiUrl : apiUrlInput.trim();
@@ -101,7 +127,7 @@ async function login(): Promise<void> {
     process.exit(1);
   }
 
-  const { accessToken, refreshToken, expiresIn, user } = result.data;
+  const { accessToken, refreshToken, expiresIn } = result.data;
   const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
   patchConfig({
@@ -111,9 +137,17 @@ async function login(): Promise<void> {
     tokenExpiresAt: expiresAt,
   });
 
+  // Decode user identity from the JWT payload (no round-trip needed)
+  const claims = decodeJwtPayload(accessToken);
+
   printSuccess(
-    { email: user.email, name: user.name, id: user.id, apiUrl },
-    `Logged in as ${user.email}`,
+    {
+      email: claims?.email ?? email,
+      id: claims?.sub ?? '(unknown)',
+      tenantId: claims?.tenantId ?? '(unknown)',
+      apiUrl,
+    },
+    `Logged in as ${claims?.email ?? email}`,
   );
 }
 
@@ -138,27 +172,21 @@ async function whoami(): Promise<void> {
     process.exit(1);
   }
 
-  const result = await api.get<{ data: { id: string; email: string; name: string } }>(
-    '/api/v1/users/me',
-  );
+  // Decode identity directly from the stored JWT — avoids needing a /me endpoint.
+  const claims = decodeJwtPayload(token);
 
-  if (!result.ok) {
-    if (result.error instanceof ApiError && result.error.status === 401) {
-      printError('Session expired. Run `neip auth login` to authenticate again.');
-    } else {
-      printError(result.error.detail, result.error.status);
-    }
+  if (claims === null) {
+    printError('Stored token is malformed. Run `neip auth login` to re-authenticate.');
     process.exit(1);
   }
 
   const config = readConfig();
-  const user = result.data.data;
 
   const data: WhoamiData = {
-    email: user.email,
-    name: user.name,
-    id: user.id,
-    apiUrl: config.apiUrl ?? 'http://localhost:3000',
+    email: claims.email,
+    id: claims.sub,
+    tenantId: claims.tenantId ?? '(none)',
+    apiUrl: config.apiUrl ?? 'http://localhost:5400',
     orgId: config.orgId ?? '(none)',
   };
 
@@ -174,18 +202,27 @@ async function whoami(): Promise<void> {
  * Also exports the standalone `whoami` command for registration on root.
  */
 export function buildAuthCommand(): Command {
-  const auth = new Command('auth').description('Authentication commands');
+  const auth = new Command('auth')
+    .description('จัดการการเข้าสู่ระบบ — Authentication commands');
 
   auth
     .command('login')
-    .description('Authenticate with the nEIP API and store credentials locally')
+    .description('เข้าสู่ระบบและบันทึก credentials ไว้ในเครื่อง — Authenticate with the nEIP API and store credentials locally')
+    .addHelpText('after', `
+Examples:
+  $ neip auth login                  # เข้าสู่ระบบแบบ interactive
+  `)
     .action(async () => {
       await login();
     });
 
   auth
     .command('logout')
-    .description('Clear stored credentials')
+    .description('ออกจากระบบและลบ credentials ที่เก็บไว้ — Clear stored credentials')
+    .addHelpText('after', `
+Examples:
+  $ neip auth logout                 # ออกจากระบบ
+  `)
     .action(() => {
       logout();
     });
@@ -198,7 +235,11 @@ export function buildAuthCommand(): Command {
  */
 export function buildWhoamiCommand(): Command {
   return new Command('whoami')
-    .description('Show current user, organisation, and API URL')
+    .description('แสดงข้อมูลผู้ใช้ปัจจุบัน องค์กร และ API URL — Show current user, organisation, and API URL')
+    .addHelpText('after', `
+Examples:
+  $ neip whoami                      # ดูข้อมูลผู้ใช้ปัจจุบัน
+  `)
     .action(async () => {
       await whoami();
     });

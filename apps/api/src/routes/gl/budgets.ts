@@ -10,6 +10,7 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { NotFoundError, ConflictError, API_V1_PREFIX } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
+import { toISO } from '../../lib/to-iso.js';
 import { requirePermission } from '../../hooks/require-permission.js';
 import { GL_ACCOUNT_READ, GL_ACCOUNT_CREATE, GL_ACCOUNT_UPDATE } from '../../lib/permissions.js';
 
@@ -90,8 +91,8 @@ interface BudgetRow {
   fiscal_year: number;
   amount_satang: bigint;
   tenant_id: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at: Date | string;
+  updated_at: Date | string;
 }
 
 interface CountRow {
@@ -108,8 +109,8 @@ function mapBudgetRow(row: BudgetRow) {
     accountId: row.account_id,
     fiscalYear: row.fiscal_year,
     amountSatang: row.amount_satang.toString(),
-    createdAt: row.created_at.toISOString(),
-    updatedAt: row.updated_at.toISOString(),
+    createdAt: toISO(row.created_at),
+    updatedAt: toISO(row.updated_at),
   };
 }
 

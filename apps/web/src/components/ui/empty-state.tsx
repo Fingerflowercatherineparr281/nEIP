@@ -20,8 +20,18 @@ export type EmptyStateContext =
   | 'approval-queue'
   | 'bill-list'
   | 'invoice-list'
+  | 'quotation-list'
   | 'search-results'
-  | 'first-time';
+  | 'first-time'
+  | 'receipt-list'
+  | 'profit-center-list'
+  | 'purchase-order-list'
+  | 'asset-list'
+  | 'wht-list'
+  | 'cost-center-list'
+  | 'delivery-note-list'
+  | 'sales-order-list'
+  | 'credit-note-list';
 
 export interface EmptyStateProps {
   /** Predefined context — sets default icon, message, and description. */
@@ -68,6 +78,11 @@ const CONTEXT_CONFIGS: Record<EmptyStateContext, ContextConfig> = {
     message: 'No invoices found',
     description: 'No invoices match the current filters.',
   },
+  'quotation-list': {
+    Icon: Inbox,
+    message: 'No quotations found',
+    description: 'No quotations match the current filters. Create your first quotation to get started.',
+  },
   'search-results': {
     Icon: Search,
     message: 'No results found',
@@ -77,6 +92,51 @@ const CONTEXT_CONFIGS: Record<EmptyStateContext, ContextConfig> = {
     Icon: PackageOpen,
     message: 'Welcome to nEIP!',
     description: 'Get started by creating your first document or importing data.',
+  },
+  'receipt-list': {
+    Icon: Inbox,
+    message: 'No receipts found',
+    description: 'No receipts match the current filters.',
+  },
+  'profit-center-list': {
+    Icon: Inbox,
+    message: 'No profit centers found',
+    description: 'Create your first profit center to start tracking profitability.',
+  },
+  'purchase-order-list': {
+    Icon: Inbox,
+    message: 'No purchase orders found',
+    description: 'No purchase orders match the current filters.',
+  },
+  'asset-list': {
+    Icon: PackageOpen,
+    message: 'No assets found',
+    description: 'No fixed assets match the current filters.',
+  },
+  'wht-list': {
+    Icon: Inbox,
+    message: 'No WHT certificates found',
+    description: 'No withholding tax certificates match the current filters.',
+  },
+  'cost-center-list': {
+    Icon: Inbox,
+    message: 'No cost centers found',
+    description: 'Create your first cost center to start tracking costs.',
+  },
+  'delivery-note-list': {
+    Icon: Inbox,
+    message: 'No delivery notes found',
+    description: 'No delivery notes match the current filters.',
+  },
+  'sales-order-list': {
+    Icon: Inbox,
+    message: 'No sales orders found',
+    description: 'No sales orders match the current filters.',
+  },
+  'credit-note-list': {
+    Icon: Inbox,
+    message: 'No credit notes found',
+    description: 'No credit notes match the current filters.',
   },
 };
 

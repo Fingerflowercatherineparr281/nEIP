@@ -7,6 +7,18 @@ import { ProgressBar } from '@/components/ui/progress-bar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { cn } from '@/lib/cn';
 
+const API_BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:5400';
+
+function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('neip-auth-token');
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -115,8 +127,9 @@ export default function ImportPage(): React.JSX.Element {
         formData.append('file', file);
         formData.append('importType', importType);
 
-        const response = await fetch(`/api/v1/import/preview`, {
+        const response = await fetch(`${API_BASE}/api/v1/import/preview`, {
           method: 'POST',
+          headers: { ...authHeaders() },
           body: formData,
         });
 
@@ -187,8 +200,9 @@ export default function ImportPage(): React.JSX.Element {
       formData.append('file', selectedFile);
       formData.append('importType', importType);
 
-      const response = await fetch('/api/v1/import', {
+      const response = await fetch(`${API_BASE}/api/v1/import`, {
         method: 'POST',
+        headers: { ...authHeaders() },
         body: formData,
       });
 
@@ -204,7 +218,9 @@ export default function ImportPage(): React.JSX.Element {
       while (!completed) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        const statusResponse = await fetch(`/api/v1/import/${jobId}`);
+        const statusResponse = await fetch(`${API_BASE}/api/v1/import/${jobId}`, {
+          headers: { ...authHeaders() },
+        });
         if (!statusResponse.ok) continue;
 
         const status = await statusResponse.json() as {

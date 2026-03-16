@@ -13,8 +13,9 @@
  */
 
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
-import { NotFoundError, ValidationError, API_V1_PREFIX } from '@neip/shared';
+import { NotFoundError, ValidationError, ConflictError, API_V1_PREFIX } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
+import { toISO } from '../../lib/to-iso.js';
 import { requirePermission } from '../../hooks/require-permission.js';
 import {
   GL_JOURNAL_CREATE,
@@ -125,9 +126,10 @@ interface JournalEntryRow {
   reversed_entry_id: string | null;
   tenant_id: string;
   created_by: string;
-  posted_at: Date | null;
-  created_at: Date;
-  updated_at: Date;
+  posted_at: Date | string | null;
+  created_at: Date | string;
+  updated_at: Date | string;
+  idempotency_key?: string | null;
 }
 
 interface JournalLineRow {
@@ -171,6 +173,31 @@ export async function journalEntryRoutes(
       const { description, fiscalYear, fiscalPeriod, lines } = request.body;
       const { tenantId, sub: userId } = request.user;
 
+      // Check X-Idempotency-Key — return existing JE if already processed.
+      const idempotencyKey = request.headers['x-idempotency-key'] as string | undefined;
+      if (idempotencyKey) {
+        const existing = await fastify.sql<[JournalEntryRow?]>`
+          SELECT * FROM journal_entries
+          WHERE tenant_id = ${tenantId} AND idempotency_key = ${idempotencyKey}
+          LIMIT 1
+        `.catch(() => [] as JournalEntryRow[]);
+        if (existing[0]) {
+          const e = existing[0];
+          return reply.status(200).send({
+            id: e.id,
+            documentNumber: e.document_number,
+            description: e.description,
+            status: e.status,
+            fiscalYear: e.fiscal_year,
+            fiscalPeriod: e.fiscal_period,
+            lines: [],
+            createdBy: e.created_by,
+            postedAt: e.posted_at != null ? toISO(e.posted_at) : null,
+            createdAt: toISO(e.created_at),
+          });
+        }
+      }
+
       // Validate debits == credits.
       let totalDebit = 0n;
       let totalCredit = 0n;
@@ -184,16 +211,34 @@ export async function journalEntryRoutes(
           errors: [{ field: 'lines', message: 'Debits and credits must balance.' }],
         });
       }
+      if (totalDebit === 0n) {
+        throw new ValidationError({
+          detail: 'Journal entry amount must be greater than 0 satang.',
+          errors: [{ field: 'lines', message: 'Amount must be > 0.' }],
+        });
+      }
 
-      // TODO: When tool registry is available, call gl.createJournalEntry tool instead.
-      // const result = await toolRegistry.execute('gl.createJournalEntry', { ... }, context);
+      // Check fiscal period is open
+      const periodCheck = await fastify.sql<[{ status: string }?]>`
+        SELECT fp.status FROM fiscal_periods fp
+        JOIN fiscal_years fy ON fp.fiscal_year_id = fy.id
+        WHERE fy.tenant_id = ${tenantId}
+          AND fy.year = ${fiscalYear}
+          AND fp.period_number = ${fiscalPeriod}
+        LIMIT 1
+      `;
+      if (periodCheck[0]?.status === 'closed') {
+        throw new ConflictError({
+          detail: `Fiscal period ${String(fiscalPeriod)}/${String(fiscalYear)} is closed. Cannot create journal entries in a closed period.`,
+        });
+      }
 
       const entryId = crypto.randomUUID();
       const documentNumber = `JE-${Date.now()}`;
 
       const entryRows = await fastify.sql<[JournalEntryRow?]>`
-        INSERT INTO journal_entries (id, document_number, description, status, fiscal_year, fiscal_period, tenant_id, created_by)
-        VALUES (${entryId}, ${documentNumber}, ${description}, 'draft', ${fiscalYear}, ${fiscalPeriod}, ${tenantId}, ${userId})
+        INSERT INTO journal_entries (id, document_number, description, status, fiscal_year, fiscal_period, tenant_id, created_by, idempotency_key)
+        VALUES (${entryId}, ${documentNumber}, ${description}, 'draft', ${fiscalYear}, ${fiscalPeriod}, ${tenantId}, ${userId}, ${idempotencyKey ?? null})
         RETURNING *
       `;
 
@@ -238,7 +283,7 @@ export async function journalEntryRoutes(
         })),
         createdBy: entry.created_by,
         postedAt: null,
-        createdAt: entry.created_at.toISOString(),
+        createdAt: toISO(entry.created_at),
       });
     },
   );
@@ -343,8 +388,8 @@ export async function journalEntryRoutes(
         fiscalPeriod: e.fiscal_period,
         lines: [],
         createdBy: e.created_by,
-        postedAt: e.posted_at?.toISOString() ?? null,
-        createdAt: e.created_at.toISOString(),
+        postedAt: e.posted_at != null ? toISO(e.posted_at) : null,
+        createdAt: toISO(e.created_at),
       }));
 
       return reply.status(200).send({
@@ -397,12 +442,21 @@ export async function journalEntryRoutes(
         if (!existing[0]) {
           throw new NotFoundError({ detail: `Journal entry ${id} not found.` });
         }
-        throw new ValidationError({
+        throw new ConflictError({
           detail: `Journal entry ${id} cannot be posted — current status is "${existing[0].status}".`,
         });
       }
 
       request.log.info({ entryId: id, tenantId }, 'Journal entry posted');
+
+      // Write audit log for posting
+      const auditId = crypto.randomUUID();
+      await fastify.sql`
+        INSERT INTO audit_logs (id, user_id, tenant_id, action, resource_type, resource_id, changes, request_id)
+        VALUES (${auditId}, ${request.user.sub}, ${tenantId}, 'post', 'journal_entry', ${id},
+          ${JSON.stringify({ status: { from: 'draft', to: 'posted' } })},
+          ${request.id ?? auditId})
+      `.catch(() => { /* non-critical */ });
 
       return reply.status(200).send({
         id: entry.id,
@@ -413,8 +467,8 @@ export async function journalEntryRoutes(
         fiscalPeriod: entry.fiscal_period,
         lines: [],
         createdBy: entry.created_by,
-        postedAt: entry.posted_at?.toISOString() ?? null,
-        createdAt: entry.created_at.toISOString(),
+        postedAt: entry.posted_at != null ? toISO(entry.posted_at) : null,
+        createdAt: toISO(entry.created_at),
       });
     },
   );
@@ -453,7 +507,7 @@ export async function journalEntryRoutes(
         throw new NotFoundError({ detail: `Journal entry ${id} not found.` });
       }
       if (original.status !== 'posted') {
-        throw new ValidationError({
+        throw new ConflictError({
           detail: `Only posted entries can be reversed. Current status: "${original.status}".`,
         });
       }
@@ -506,8 +560,8 @@ export async function journalEntryRoutes(
         fiscalPeriod: reversal.fiscal_period,
         lines: [],
         createdBy: reversal.created_by,
-        postedAt: reversal.posted_at?.toISOString() ?? null,
-        createdAt: reversal.created_at.toISOString(),
+        postedAt: reversal.posted_at != null ? toISO(reversal.posted_at) : null,
+        createdAt: toISO(reversal.created_at),
       });
     },
   );

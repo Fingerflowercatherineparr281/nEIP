@@ -2,18 +2,17 @@
  * Payment routes:
  *   POST /api/v1/payments          — record payment
  *   GET  /api/v1/payments          — list payments
+ *   POST /api/v1/payments/:id/void — void payment
  *   POST /api/v1/payments/:id/match — match payment to invoices
  *
  * Story 4.5b — AR API Routes (Invoices + Payments)
- *
- * Note: Payment tables may not exist in the DB schema yet.
- * These routes use stub responses with TODO markers.
  */
 
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
-import { NotFoundError, API_V1_PREFIX } from '@neip/shared';
+import { NotFoundError, ConflictError, ValidationError, API_V1_PREFIX } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
 import { requirePermission } from '../../hooks/require-permission.js';
+import { toISO } from '../../lib/to-iso.js';
 import {
   AR_PAYMENT_CREATE,
   AR_PAYMENT_READ,
@@ -35,7 +34,7 @@ const createPaymentBodySchema = {
     paymentDate: { type: 'string', format: 'date', description: 'Date of payment (YYYY-MM-DD)' },
     paymentMethod: {
       type: 'string',
-      enum: ['cash', 'bank_transfer', 'cheque', 'credit_card', 'promptpay'],
+      enum: ['cash', 'bank_transfer', 'cheque', 'promptpay'],
       description: 'Payment method',
     },
     reference: { type: 'string', maxLength: 255, description: 'External reference number' },
@@ -115,6 +114,78 @@ interface IdParams {
   id: string;
 }
 
+interface PaymentRow {
+  id: string;
+  document_number: string;
+  customer_id: string | null;
+  amount_satang: bigint;
+  payment_date: string;
+  payment_method: string;
+  reference: string | null;
+  status: string;
+  notes: string | null;
+  tenant_id: string;
+  created_by: string;
+  created_at: Date | string;
+}
+
+interface InvoiceRow {
+  id: string;
+  invoice_number: string;
+  customer_id: string;
+  status: string;
+  total_satang: bigint;
+  paid_satang: bigint;
+  tenant_id: string;
+}
+
+interface CountRow {
+  count: string;
+}
+
+// ---------------------------------------------------------------------------
+// Helper: update invoice status after payment changes
+// ---------------------------------------------------------------------------
+
+async function updateInvoiceAfterPayment(
+  fastify: FastifyInstance,
+  invoiceId: string,
+  tenantId: string,
+): Promise<void> {
+  // Sum all non-voided payments for this invoice
+  const sumRows = await fastify.sql<[{ total: string }?]>`
+    SELECT COALESCE(SUM(ip.amount_satang), 0)::text as total
+    FROM invoice_payments ip
+    JOIN ar_payments p ON p.id = ip.payment_id
+    WHERE ip.invoice_id = ${invoiceId}
+      AND p.tenant_id = ${tenantId}
+      AND (p.status IS NULL OR p.status != 'voided')
+  `;
+  const paidSatang = BigInt(sumRows[0]?.total ?? '0');
+
+  const invRows = await fastify.sql<[InvoiceRow?]>`
+    SELECT * FROM invoices WHERE id = ${invoiceId} AND tenant_id = ${tenantId} LIMIT 1
+  `;
+  const inv = invRows[0];
+  if (!inv) return;
+
+  const totalSatang = BigInt(inv.total_satang);
+  let newStatus: string;
+  if (paidSatang >= totalSatang) {
+    newStatus = 'paid';
+  } else if (paidSatang > 0n) {
+    newStatus = 'partial';
+  } else {
+    newStatus = inv.status === 'paid' || inv.status === 'partial' ? 'sent' : inv.status;
+  }
+
+  await fastify.sql`
+    UPDATE invoices
+    SET paid_satang = ${paidSatang.toString()}::bigint, status = ${newStatus}, updated_at = NOW()
+    WHERE id = ${invoiceId} AND tenant_id = ${tenantId}
+  `;
+}
+
 // ---------------------------------------------------------------------------
 // Route plugin
 // ---------------------------------------------------------------------------
@@ -144,30 +215,71 @@ export async function paymentRoutes(
       } = request.body;
       const { tenantId, sub: userId } = request.user;
 
+      // Validate amount
+      const amountBigInt = BigInt(amountSatang);
+      if (amountBigInt <= 0n) {
+        throw new ValidationError({ detail: 'Payment amount must be greater than 0 satang.' });
+      }
+
+      // If invoiceId provided, validate invoice exists and get its details
+      let resolvedCustomerId = customerId ?? null;
+      if (invoiceId) {
+        const invRows = await fastify.sql<[InvoiceRow?]>`
+          SELECT * FROM invoices WHERE id = ${invoiceId} AND tenant_id = ${tenantId} LIMIT 1
+        `;
+        const inv = invRows[0];
+        if (!inv) {
+          throw new NotFoundError({ detail: `Invoice ${invoiceId} not found.` });
+        }
+        if (inv.status === 'void') {
+          throw new ConflictError({ detail: `Invoice ${invoiceId} is voided and cannot receive payments.` });
+        }
+        // Check overpayment
+        const remaining = BigInt(inv.total_satang) - BigInt(inv.paid_satang);
+        if (amountBigInt > remaining) {
+          throw new ValidationError({
+            detail: `Payment amount ${amountSatang} exceeds outstanding balance ${remaining.toString()} satang.`,
+          });
+        }
+        resolvedCustomerId = resolvedCustomerId ?? inv.customer_id;
+      }
+
       const paymentId = crypto.randomUUID();
       const paymentNumber = `PMT-${Date.now()}`;
+      const status = invoiceId ? 'matched' : 'unmatched';
 
-      // TODO: Insert into payments table when schema is available.
-      // await fastify.sql`
-      //   INSERT INTO payments (id, payment_number, customer_id, invoice_id, amount_satang, payment_date, payment_method, reference, notes, status, tenant_id, created_by)
-      //   VALUES (${paymentId}, ${paymentNumber}, ${customerId ?? null}, ${invoiceId ?? null}, ${BigInt(amountSatang)}, ${paymentDate}, ${paymentMethod}, ${reference ?? null}, ${notes ?? null}, 'unmatched', ${tenantId}, ${userId})
-      // `;
+      await fastify.sql`
+        INSERT INTO ar_payments (id, document_number, customer_id, amount_satang, payment_date, payment_method, reference, notes, tenant_id, created_by)
+        VALUES (${paymentId}, ${paymentNumber}, ${resolvedCustomerId}, ${amountBigInt.toString()}::bigint, ${paymentDate}, ${paymentMethod}, ${reference ?? null}, ${notes ?? null}, ${tenantId}, ${userId})
+      `;
+
+      // Link to invoice if provided
+      if (invoiceId) {
+        const matchId = crypto.randomUUID();
+        await fastify.sql`
+          INSERT INTO invoice_payments (id, invoice_id, payment_id, amount_satang)
+          VALUES (${matchId}, ${invoiceId}, ${paymentId}, ${amountBigInt.toString()}::bigint)
+          ON CONFLICT (invoice_id, payment_id) DO NOTHING
+        `;
+        // Update invoice paid_satang and status
+        await updateInvoiceAfterPayment(fastify, invoiceId, tenantId);
+      }
 
       request.log.info(
-        { paymentId, paymentNumber, tenantId, userId },
-        'Payment recorded (stub)',
+        { paymentId, paymentNumber, tenantId, userId, invoiceId },
+        'Payment recorded',
       );
 
       return reply.status(201).send({
         id: paymentId,
         paymentNumber,
-        customerId: customerId ?? null,
+        customerId: resolvedCustomerId,
         invoiceId: invoiceId ?? null,
         amountSatang,
         paymentDate,
         paymentMethod,
         reference: reference ?? null,
-        status: invoiceId ? 'matched' : 'unmatched',
+        status,
         notes: notes ?? null,
         createdAt: new Date().toISOString(),
       });
@@ -202,18 +314,150 @@ export async function paymentRoutes(
       preHandler: [requireAuth, requirePermission(AR_PAYMENT_READ)],
     },
     async (request, reply) => {
+      const { tenantId } = request.user;
       const limit = request.query.limit ?? 20;
       const offset = request.query.offset ?? 0;
+      const { status, customerId } = request.query;
 
-      // TODO: Query payments table when schema is available.
-      request.log.debug({ tenantId: request.user.tenantId }, 'Listing payments (stub)');
+      let countRows: CountRow[];
+      let payments: PaymentRow[];
+
+      if (status !== undefined && customerId !== undefined) {
+        countRows = await fastify.sql<CountRow[]>`
+          SELECT COUNT(*)::text as count FROM ar_payments WHERE tenant_id = ${tenantId} AND customer_id = ${customerId} AND status = ${status}
+        `;
+        payments = await fastify.sql<PaymentRow[]>`
+          SELECT * FROM ar_payments WHERE tenant_id = ${tenantId} AND customer_id = ${customerId} AND status = ${status}
+          ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}
+        `;
+      } else if (status !== undefined) {
+        countRows = await fastify.sql<CountRow[]>`
+          SELECT COUNT(*)::text as count FROM ar_payments WHERE tenant_id = ${tenantId} AND status = ${status}
+        `;
+        payments = await fastify.sql<PaymentRow[]>`
+          SELECT * FROM ar_payments WHERE tenant_id = ${tenantId} AND status = ${status}
+          ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}
+        `;
+      } else if (customerId !== undefined) {
+        countRows = await fastify.sql<CountRow[]>`
+          SELECT COUNT(*)::text as count FROM ar_payments WHERE tenant_id = ${tenantId} AND customer_id = ${customerId}
+        `;
+        payments = await fastify.sql<PaymentRow[]>`
+          SELECT * FROM ar_payments WHERE tenant_id = ${tenantId} AND customer_id = ${customerId}
+          ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}
+        `;
+      } else {
+        countRows = await fastify.sql<CountRow[]>`
+          SELECT COUNT(*)::text as count FROM ar_payments WHERE tenant_id = ${tenantId}
+        `;
+        payments = await fastify.sql<PaymentRow[]>`
+          SELECT * FROM ar_payments WHERE tenant_id = ${tenantId}
+          ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}
+        `;
+      }
+
+      const total = parseInt(countRows[0]?.count ?? '0', 10);
+
+      // Get invoice linkages for matched payments
+      const paymentIds = payments.map((p) => p.id);
+      let invoiceLinkMap: Record<string, string> = {};
+      if (paymentIds.length > 0) {
+        const links = await fastify.sql<Array<{ payment_id: string; invoice_id: string }>>`
+          SELECT payment_id, invoice_id FROM invoice_payments
+          WHERE payment_id IN ${fastify.sql(paymentIds)}
+          LIMIT ${paymentIds.length * 5}
+        `.catch(() => [] as Array<{ payment_id: string; invoice_id: string }>);
+        for (const link of links) {
+          invoiceLinkMap[link.payment_id] = link.invoice_id;
+        }
+      }
+
+      const items = payments.map((p) => ({
+        id: p.id,
+        paymentNumber: p.document_number,
+        customerId: p.customer_id,
+        invoiceId: invoiceLinkMap[p.id] ?? null,
+        amountSatang: p.amount_satang.toString(),
+        paymentDate: p.payment_date,
+        paymentMethod: p.payment_method,
+        reference: p.reference,
+        status: p.status as 'unmatched' | 'matched' | 'voided',
+        notes: p.notes,
+        createdAt: toISO(p.created_at),
+      }));
+
+      return reply.status(200).send({ items, total, limit, offset, hasMore: offset + limit < total });
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // POST /api/v1/payments/:id/void — void payment
+  // -------------------------------------------------------------------------
+  fastify.post<{ Params: IdParams }>(
+    `${API_V1_PREFIX}/payments/:id/void`,
+    {
+      schema: {
+        description: 'Void a payment and restore invoice outstanding balance',
+        tags: ['ar'],
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: 'object',
+          required: ['id'],
+          properties: { id: { type: 'string' } },
+        },
+        response: { 200: { description: 'Payment voided', ...paymentResponseSchema } },
+      },
+      preHandler: [requireAuth, requirePermission(AR_PAYMENT_UPDATE)],
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      const { tenantId } = request.user;
+
+      // Get payment
+      const paymentRows = await fastify.sql<[PaymentRow?]>`
+        SELECT * FROM ar_payments WHERE id = ${id} AND tenant_id = ${tenantId} LIMIT 1
+      `;
+      const payment = paymentRows[0];
+      if (!payment) {
+        throw new NotFoundError({ detail: `Payment ${id} not found.` });
+      }
+      if (payment.status === 'voided') {
+        throw new ConflictError({ detail: `Payment ${id} is already voided.` });
+      }
+
+      // Get linked invoice IDs before voiding
+      const links = await fastify.sql<Array<{ invoice_id: string }>>`
+        SELECT invoice_id FROM invoice_payments WHERE payment_id = ${id}
+      `;
+
+      // Void the payment
+      await fastify.sql`
+        UPDATE ar_payments SET status = 'voided', updated_at = NOW()
+        WHERE id = ${id} AND tenant_id = ${tenantId}
+      `.catch(() => fastify.sql`
+        UPDATE ar_payments SET status = 'voided'
+        WHERE id = ${id} AND tenant_id = ${tenantId}
+      `);
+
+      // Update each linked invoice
+      for (const link of links) {
+        await updateInvoiceAfterPayment(fastify, link.invoice_id, tenantId);
+      }
+
+      request.log.info({ paymentId: id, tenantId }, 'Payment voided');
 
       return reply.status(200).send({
-        items: [],
-        total: 0,
-        limit,
-        offset,
-        hasMore: false,
+        id: payment.id,
+        paymentNumber: payment.document_number,
+        customerId: payment.customer_id,
+        invoiceId: links[0]?.invoice_id ?? null,
+        amountSatang: payment.amount_satang.toString(),
+        paymentDate: payment.payment_date,
+        paymentMethod: payment.payment_method,
+        reference: payment.reference,
+        status: 'voided',
+        notes: payment.notes,
+        createdAt: toISO(payment.created_at),
       });
     },
   );
@@ -238,22 +482,50 @@ export async function paymentRoutes(
       },
       preHandler: [requireAuth, requirePermission(AR_PAYMENT_UPDATE)],
     },
-    async (request, _reply) => {
+    async (request, reply) => {
       const { id } = request.params;
+      const { invoiceIds } = request.body;
       const { tenantId } = request.user;
 
-      // TODO: Implement payment-to-invoice matching when schema is available.
-      // 1. Verify payment exists and belongs to tenant
-      // 2. Verify all invoice IDs exist and belong to tenant
-      // 3. Update payment status to 'matched'
-      // 4. Update invoice paid_satang and status accordingly
-      request.log.debug(
-        { paymentId: id, invoiceIds: request.body.invoiceIds, tenantId },
-        'Match payment (stub)',
-      );
+      // Verify payment exists.
+      const paymentRows = await fastify.sql<[PaymentRow?]>`
+        SELECT * FROM ar_payments WHERE id = ${id} AND tenant_id = ${tenantId} LIMIT 1
+      `;
+      const payment = paymentRows[0];
+      if (!payment) {
+        throw new NotFoundError({ detail: `Payment ${id} not found.` });
+      }
 
-      throw new NotFoundError({
-        detail: `Payment ${id} not found. (AR payment table not yet available)`,
+      // Create matching records for invoices.
+      for (const invoiceId of invoiceIds) {
+        const matchId = crypto.randomUUID();
+        await fastify.sql`
+          INSERT INTO invoice_payments (id, invoice_id, payment_id, amount_satang)
+          VALUES (${matchId}, ${invoiceId}, ${id}, ${payment.amount_satang.toString()}::bigint)
+          ON CONFLICT (invoice_id, payment_id) DO NOTHING
+        `;
+        await updateInvoiceAfterPayment(fastify, invoiceId, tenantId);
+      }
+
+      // Update payment status to matched
+      await fastify.sql`
+        UPDATE ar_payments SET status = 'matched' WHERE id = ${id} AND tenant_id = ${tenantId}
+      `;
+
+      request.log.info({ paymentId: id, invoiceIds, tenantId }, 'Payment matched to invoices');
+
+      return reply.status(200).send({
+        id: payment.id,
+        paymentNumber: payment.document_number,
+        customerId: payment.customer_id,
+        invoiceId: invoiceIds[0] ?? null,
+        amountSatang: payment.amount_satang.toString(),
+        paymentDate: payment.payment_date,
+        paymentMethod: payment.payment_method,
+        reference: payment.reference,
+        status: 'matched',
+        notes: payment.notes,
+        createdAt: toISO(payment.created_at),
       });
     },
   );

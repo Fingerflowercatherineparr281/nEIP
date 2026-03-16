@@ -75,3 +75,108 @@ export type { TaxRateRow, NewTaxRateRow } from './tax-rates.js';
 
 export { firm_client_assignments } from './firm-client-assignments.js';
 export type { FirmClientAssignment, NewFirmClientAssignment } from './firm-client-assignments.js';
+
+export { quotations } from './quotations.js';
+export type { Quotation, NewQuotation } from './quotations.js';
+
+export { quotation_lines } from './quotation-lines.js';
+export type { QuotationLine, NewQuotationLine } from './quotation-lines.js';
+
+export { sales_orders } from './sales-orders.js';
+export type { SalesOrder, NewSalesOrder } from './sales-orders.js';
+
+export { sales_order_lines } from './sales-order-lines.js';
+export type { SalesOrderLine, NewSalesOrderLine } from './sales-order-lines.js';
+
+export { delivery_notes } from './delivery-notes.js';
+export type { DeliveryNote, NewDeliveryNote } from './delivery-notes.js';
+
+export { delivery_note_lines } from './delivery-note-lines.js';
+export type { DeliveryNoteLine, NewDeliveryNoteLine } from './delivery-note-lines.js';
+
+export { receipts } from './receipts.js';
+export type { Receipt, NewReceipt } from './receipts.js';
+
+export { credit_notes } from './credit-notes.js';
+export type { CreditNote, NewCreditNote } from './credit-notes.js';
+
+export { credit_note_lines } from './credit-note-lines.js';
+export type { CreditNoteLine, NewCreditNoteLine } from './credit-note-lines.js';
+
+export { purchase_orders } from './purchase-orders.js';
+export type { PurchaseOrder, NewPurchaseOrder } from './purchase-orders.js';
+
+export { purchase_order_lines } from './purchase-order-lines.js';
+export type { PurchaseOrderLine, NewPurchaseOrderLine } from './purchase-order-lines.js';
+
+// ---------------------------------------------------------------------------
+// Inventory / MM-IM
+// ---------------------------------------------------------------------------
+
+export { products } from './products.js';
+export type { Product, NewProduct } from './products.js';
+
+export { warehouses } from './warehouses.js';
+export type { Warehouse, NewWarehouse } from './warehouses.js';
+
+export { stock_movements } from './stock-movements.js';
+export type { StockMovement, NewStockMovement } from './stock-movements.js';
+
+// ---------------------------------------------------------------------------
+// CRM — Contacts
+// ---------------------------------------------------------------------------
+
+export { contacts } from './contacts.js';
+export type { Contact, NewContact } from './contacts.js';
+
+// ---------------------------------------------------------------------------
+// HR — Employees & Departments
+// ---------------------------------------------------------------------------
+
+export { departments } from './departments.js';
+export type { Department, NewDepartment } from './departments.js';
+
+export { employees } from './employees.js';
+export type { Employee, NewEmployee } from './employees.js';
+
+// ---------------------------------------------------------------------------
+// HR — Payroll
+// ---------------------------------------------------------------------------
+
+export { payroll_runs } from './payroll-runs.js';
+export type { PayrollRun, NewPayrollRun } from './payroll-runs.js';
+
+export { payroll_items } from './payroll-items.js';
+export type { PayrollItem, NewPayrollItem } from './payroll-items.js';
+
+// ---------------------------------------------------------------------------
+// HR — Leave Management
+// ---------------------------------------------------------------------------
+
+export { leave_types } from './leave-types.js';
+export type { LeaveType, NewLeaveType } from './leave-types.js';
+
+export { leave_requests } from './leave-requests.js';
+export type { LeaveRequest, NewLeaveRequest } from './leave-requests.js';
+
+// ---------------------------------------------------------------------------
+// Financial Modules (FI-AA, FI-BL, WHT, CO)
+// ---------------------------------------------------------------------------
+
+export { fixed_assets } from './fixed-assets.js';
+export type { FixedAsset, NewFixedAsset } from './fixed-assets.js';
+
+export { bank_accounts } from './bank-accounts.js';
+export type { BankAccount, NewBankAccount } from './bank-accounts.js';
+
+export { bank_transactions } from './bank-transactions.js';
+export type { BankTransaction, NewBankTransaction } from './bank-transactions.js';
+
+export { wht_certificates } from './wht-certificates.js';
+export type { WhtCertificate, NewWhtCertificate } from './wht-certificates.js';
+
+export { cost_centers } from './cost-centers.js';
+export type { CostCenter, NewCostCenter } from './cost-centers.js';
+
+export { profit_centers } from './profit-centers.js';
+export type { ProfitCenter, NewProfitCenter } from './profit-centers.js';

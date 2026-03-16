@@ -79,6 +79,7 @@ export async function webhookRoutes(
       preHandler: [requireAuth],
       schema: {
         tags: ['webhooks'],
+        description: 'ลงทะเบียน webhook สำหรับรับการแจ้งเตือนเหตุการณ์ — Register a webhook endpoint for event notifications',
         summary: 'Register a webhook',
         body: createWebhookBodySchema,
         response: {
@@ -109,6 +110,7 @@ export async function webhookRoutes(
       preHandler: [requireAuth],
       schema: {
         tags: ['webhooks'],
+        description: 'รายการ webhook ที่ลงทะเบียนไว้ — List all registered webhooks for the tenant',
         summary: 'List webhooks',
         response: {
           200: {
@@ -140,6 +142,7 @@ export async function webhookRoutes(
       preHandler: [requireAuth],
       schema: {
         tags: ['webhooks'],
+        description: 'ลบ webhook ที่ลงทะเบียนไว้ — Delete a registered webhook',
         summary: 'Delete a webhook',
         params: {
           type: 'object',

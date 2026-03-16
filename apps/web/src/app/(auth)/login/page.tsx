@@ -1,20 +1,19 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { InlineAlert } from '@/components/ui/toast';
 import { api, AppError } from '@/lib/api-client';
 import { useAuthStore, type AuthUser } from '@/stores/auth-store';
 
 interface LoginResponse {
-  user: AuthUser;
-  token: string;
+  accessToken: string;
   refreshToken: string;
+  tokenType: string;
+  expiresIn: number;
 }
 
 export default function LoginPage(): React.JSX.Element {
-  const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,15 +31,36 @@ export default function LoginPage(): React.JSX.Element {
           email,
           password,
         });
-        if (typeof window !== 'undefined' && data.refreshToken) {
-          localStorage.setItem('neip-refresh-token', data.refreshToken);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('neip-auth-token', data.accessToken);
+          if (data.refreshToken) {
+            localStorage.setItem('neip-refresh-token', data.refreshToken);
+          }
         }
-        setAuth(data.user, data.token);
 
-        if (data.user.onboardingComplete === false) {
-          router.push('/onboarding');
+        // Decode JWT payload to extract user info
+        const payload = JSON.parse(atob(data.accessToken.split('.')[1] ?? '')) as {
+          sub: string;
+          email: string;
+          tenantId: string;
+        };
+        const user: AuthUser = {
+          id: payload.sub,
+          email: payload.email,
+          name: email.split('@')[0] ?? '',
+          role: 'owner',
+          orgId: payload.tenantId,
+          orgName: '',
+        };
+        setAuth(user, data.accessToken);
+        // Small delay to let zustand persist sync to localStorage
+        await new Promise((r) => setTimeout(r, 100));
+        // If user already has an org (not 'default'), go to dashboard
+        // Otherwise go to onboarding
+        if (payload.tenantId && payload.tenantId !== 'default') {
+          window.location.href = '/dashboard';
         } else {
-          router.push('/dashboard');
+          window.location.href = '/onboarding';
         }
       } catch (err) {
         if (err instanceof AppError) {
@@ -52,7 +72,7 @@ export default function LoginPage(): React.JSX.Element {
         setLoading(false);
       }
     },
-    [email, password, router, setAuth],
+    [email, password, setAuth],
   );
 
   return (

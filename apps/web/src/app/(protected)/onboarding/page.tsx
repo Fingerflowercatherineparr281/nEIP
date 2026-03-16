@@ -57,14 +57,17 @@ export default function OnboardingPage(): React.JSX.Element {
   // Mutations
   const orgMutation = useMutation({
     mutationFn: (data: OrgSetupPayload) =>
-      api.post('/organizations/setup', data),
+      api.post('/organizations', data),
     onError: (err: Error) => {
       setError(err instanceof AppError ? err.message : 'Failed to set up organization');
     },
   });
 
   const coaMutation = useMutation({
-    mutationFn: () => api.post('/accounts/seed-tfac'),
+    mutationFn: async () => {
+      // CoA is auto-seeded when org is created — just advance step
+      return Promise.resolve();
+    },
     onError: (err: Error) => {
       setError(err instanceof AppError ? err.message : 'Failed to seed chart of accounts');
     },
@@ -72,7 +75,7 @@ export default function OnboardingPage(): React.JSX.Element {
 
   const inviteMutation = useMutation({
     mutationFn: (members: InviteMember[]) =>
-      api.post('/organizations/invite', { members }),
+      api.post('/users/invite', { members }),
   });
 
   const handleNext = useCallback(async () => {

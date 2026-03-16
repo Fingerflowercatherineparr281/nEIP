@@ -6,20 +6,30 @@
  *   POST /api/v1/invoices/:id/void — void invoice
  *
  * Story 4.5b — AR API Routes (Invoices + Payments)
- *
- * Note: Invoice and payment tables may not exist in the DB schema yet.
- * These routes use raw SQL with TODO markers for when the schema is available.
  */
 
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
-import { NotFoundError, API_V1_PREFIX } from '@neip/shared';
+import { NotFoundError, ValidationError, ConflictError, API_V1_PREFIX } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
 import { requirePermission } from '../../hooks/require-permission.js';
+import { toISO } from '../../lib/to-iso.js';
 import {
   AR_INVOICE_CREATE,
   AR_INVOICE_READ,
   AR_INVOICE_VOID,
 } from '../../lib/permissions.js';
+
+// Thai VAT rate: 7% expressed in basis points (700 = 7%)
+const VAT_RATE_BASIS_POINTS = 700n;
+
+/** Compute VAT amount (round half up) using bigint arithmetic. */
+function calcVat(subTotalSatang: bigint): bigint {
+  // subTotal * 700 / 10000, round half up
+  const scaled = subTotalSatang * VAT_RATE_BASIS_POINTS;
+  const quotient = scaled / 10000n;
+  const remainder = scaled % 10000n;
+  return remainder * 2n >= 10000n ? quotient + 1n : quotient;
+}
 
 // ---------------------------------------------------------------------------
 // JSON Schemas
@@ -59,11 +69,17 @@ const invoiceResponseSchema = {
     id: { type: 'string' },
     invoiceNumber: { type: 'string' },
     customerId: { type: 'string' },
-    status: { type: 'string', enum: ['draft', 'sent', 'paid', 'partial', 'overdue', 'void'] },
+    status: { type: 'string', enum: ['draft', 'posted', 'sent', 'paid', 'partial', 'overdue', 'void'] },
     totalSatang: { type: 'string' },
     paidSatang: { type: 'string' },
+    subTotalSatang: { type: 'string' },
+    vatRateBasisPoints: { type: 'integer' },
+    vatAmountSatang: { type: 'string' },
+    grandTotalSatang: { type: 'string' },
     dueDate: { type: 'string', format: 'date' },
     notes: { type: 'string', nullable: true },
+    postedAt: { type: 'string', nullable: true },
+    journalEntryId: { type: 'string', nullable: true },
     lines: { type: 'array', items: { type: 'object' } },
     createdAt: { type: 'string', format: 'date-time' },
     updatedAt: { type: 'string', format: 'date-time' },
@@ -111,6 +127,63 @@ interface IdParams {
   id: string;
 }
 
+interface InvoiceRow {
+  id: string;
+  invoice_number: string;
+  customer_id: string;
+  status: string;
+  total_satang: bigint;
+  paid_satang: bigint;
+  due_date: string;
+  notes: string | null;
+  tenant_id: string;
+  created_by: string;
+  posted_at: Date | string | null;
+  journal_entry_id: string | null;
+  created_at: Date | string;
+  updated_at: Date | string;
+}
+
+function buildInvoiceResponse(inv: InvoiceRow, lines: unknown[]) {
+  const subTotal = BigInt(inv.total_satang);
+  const vatAmount = calcVat(subTotal);
+  const grandTotal = subTotal + vatAmount;
+  return {
+    id: inv.id,
+    invoiceNumber: inv.invoice_number,
+    customerId: inv.customer_id,
+    status: inv.status,
+    totalSatang: inv.total_satang.toString(),
+    paidSatang: inv.paid_satang.toString(),
+    subTotalSatang: subTotal.toString(),
+    vatRateBasisPoints: Number(VAT_RATE_BASIS_POINTS),
+    vatAmountSatang: vatAmount.toString(),
+    grandTotalSatang: grandTotal.toString(),
+    dueDate: inv.due_date,
+    notes: inv.notes,
+    postedAt: inv.posted_at ? toISO(inv.posted_at) : null,
+    journalEntryId: inv.journal_entry_id ?? null,
+    lines,
+    createdAt: toISO(inv.created_at),
+    updatedAt: toISO(inv.updated_at),
+  };
+}
+
+interface InvoiceLineRow {
+  id: string;
+  invoice_id: string;
+  line_number: number;
+  description: string;
+  quantity: number;
+  unit_price_satang: bigint;
+  total_satang: bigint;
+  account_id: string | null;
+}
+
+interface CountRow {
+  count: string;
+}
+
 // ---------------------------------------------------------------------------
 // Route plugin
 // ---------------------------------------------------------------------------
@@ -138,6 +211,16 @@ export async function invoiceRoutes(
       const { customerId, dueDate, notes, lines } = request.body;
       const { tenantId, sub: userId } = request.user;
 
+      // Validate customer belongs to this tenant
+      if (customerId) {
+        const customerCheck = await fastify.sql<[{ id: string }?]>`
+          SELECT id FROM contacts WHERE id = ${customerId} AND tenant_id = ${tenantId} LIMIT 1
+        `;
+        if (!customerCheck[0]) {
+          throw new NotFoundError({ detail: `Customer ${customerId} not found.` });
+        }
+      }
+
       // Calculate total.
       let totalSatang = 0n;
       const processedLines = lines.map((line, index) => {
@@ -154,21 +237,34 @@ export async function invoiceRoutes(
         };
       });
 
+      // Validate total > 0
+      if (totalSatang === 0n) {
+        throw new ValidationError({ detail: 'Invoice total must be > 0 satang.' });
+      }
+
       const invoiceId = crypto.randomUUID();
       const invoiceNumber = `INV-${Date.now()}`;
 
-      // TODO: Insert into invoices table when schema is available.
-      // For now, return a stub response that matches the expected shape.
-      // The actual DB insert would look like:
-      // await fastify.sql`
-      //   INSERT INTO invoices (id, invoice_number, customer_id, status, total_satang, paid_satang, due_date, notes, tenant_id, created_by)
-      //   VALUES (${invoiceId}, ${invoiceNumber}, ${customerId}, 'draft', ${totalSatang}, 0, ${dueDate}, ${notes ?? null}, ${tenantId}, ${userId})
-      // `;
+      await fastify.sql`
+        INSERT INTO invoices (id, invoice_number, customer_id, status, total_satang, paid_satang, due_date, notes, tenant_id, created_by)
+        VALUES (${invoiceId}, ${invoiceNumber}, ${customerId}, 'draft', ${totalSatang.toString()}::bigint, 0, ${dueDate}, ${notes ?? null}, ${tenantId}, ${userId})
+      `;
+
+      // Insert line items.
+      for (const line of processedLines) {
+        await fastify.sql`
+          INSERT INTO invoice_line_items (id, invoice_id, line_number, description, quantity, unit_price_satang, total_satang, account_id)
+          VALUES (${line.id}, ${invoiceId}, ${line.lineNumber}, ${line.description}, ${line.quantity}, ${line.unitPriceSatang}::bigint, ${line.totalSatang}::bigint, ${line.accountId})
+        `;
+      }
 
       request.log.info(
         { invoiceId, invoiceNumber, customerId, tenantId, userId },
-        'Invoice created (stub)',
+        'Invoice created',
       );
+
+      const vatAmount = calcVat(totalSatang);
+      const grandTotal = totalSatang + vatAmount;
 
       return reply.status(201).send({
         id: invoiceId,
@@ -177,8 +273,14 @@ export async function invoiceRoutes(
         status: 'draft',
         totalSatang: totalSatang.toString(),
         paidSatang: '0',
+        subTotalSatang: totalSatang.toString(),
+        vatRateBasisPoints: Number(VAT_RATE_BASIS_POINTS),
+        vatAmountSatang: vatAmount.toString(),
+        grandTotalSatang: grandTotal.toString(),
         dueDate,
         notes: notes ?? null,
+        postedAt: null,
+        journalEntryId: null,
         lines: processedLines,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -214,20 +316,53 @@ export async function invoiceRoutes(
       preHandler: [requireAuth, requirePermission(AR_INVOICE_READ)],
     },
     async (request, reply) => {
+      const { tenantId } = request.user;
       const limit = request.query.limit ?? 20;
       const offset = request.query.offset ?? 0;
+      const { status, customerId } = request.query;
 
-      // TODO: Query invoices table when schema is available.
-      // For now, return empty list stub.
-      request.log.debug({ tenantId: request.user.tenantId }, 'Listing invoices (stub)');
+      let countRows: CountRow[];
+      let invoices: InvoiceRow[];
 
-      return reply.status(200).send({
-        items: [],
-        total: 0,
-        limit,
-        offset,
-        hasMore: false,
-      });
+      if (status !== undefined && customerId !== undefined) {
+        countRows = await fastify.sql<CountRow[]>`
+          SELECT COUNT(*)::text as count FROM invoices WHERE tenant_id = ${tenantId} AND status = ${status} AND customer_id = ${customerId}
+        `;
+        invoices = await fastify.sql<InvoiceRow[]>`
+          SELECT * FROM invoices WHERE tenant_id = ${tenantId} AND status = ${status} AND customer_id = ${customerId}
+          ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}
+        `;
+      } else if (status !== undefined) {
+        countRows = await fastify.sql<CountRow[]>`
+          SELECT COUNT(*)::text as count FROM invoices WHERE tenant_id = ${tenantId} AND status = ${status}
+        `;
+        invoices = await fastify.sql<InvoiceRow[]>`
+          SELECT * FROM invoices WHERE tenant_id = ${tenantId} AND status = ${status}
+          ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}
+        `;
+      } else if (customerId !== undefined) {
+        countRows = await fastify.sql<CountRow[]>`
+          SELECT COUNT(*)::text as count FROM invoices WHERE tenant_id = ${tenantId} AND customer_id = ${customerId}
+        `;
+        invoices = await fastify.sql<InvoiceRow[]>`
+          SELECT * FROM invoices WHERE tenant_id = ${tenantId} AND customer_id = ${customerId}
+          ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}
+        `;
+      } else {
+        countRows = await fastify.sql<CountRow[]>`
+          SELECT COUNT(*)::text as count FROM invoices WHERE tenant_id = ${tenantId}
+        `;
+        invoices = await fastify.sql<InvoiceRow[]>`
+          SELECT * FROM invoices WHERE tenant_id = ${tenantId}
+          ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}
+        `;
+      }
+
+      const total = parseInt(countRows[0]?.count ?? '0', 10);
+
+      const items = invoices.map((inv) => buildInvoiceResponse(inv, []));
+
+      return reply.status(200).send({ items, total, limit, offset, hasMore: offset + limit < total });
     },
   );
 
@@ -250,17 +385,167 @@ export async function invoiceRoutes(
       },
       preHandler: [requireAuth, requirePermission(AR_INVOICE_READ)],
     },
-    async (request, _reply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const { tenantId } = request.user;
 
-      // TODO: Query invoices table when schema is available.
-      // For now, return 404 as no invoices are persisted yet.
-      request.log.debug({ invoiceId: id, tenantId }, 'Get invoice detail (stub)');
+      const rows = await fastify.sql<[InvoiceRow?]>`
+        SELECT * FROM invoices WHERE id = ${id} AND tenant_id = ${tenantId} LIMIT 1
+      `;
+      const inv = rows[0];
+      if (!inv) {
+        throw new NotFoundError({ detail: `Invoice ${id} not found.` });
+      }
 
-      throw new NotFoundError({
-        detail: `Invoice ${id} not found. (AR invoice table not yet available)`,
-      });
+      const lines = await fastify.sql<InvoiceLineRow[]>`
+        SELECT * FROM invoice_line_items WHERE invoice_id = ${id} ORDER BY line_number
+      `;
+
+      const mappedLines = lines.map((l) => ({
+        id: l.id,
+        lineNumber: l.line_number,
+        description: l.description,
+        quantity: l.quantity,
+        unitPriceSatang: l.unit_price_satang.toString(),
+        totalSatang: l.total_satang.toString(),
+        accountId: l.account_id,
+      }));
+
+      return reply.status(200).send(buildInvoiceResponse(inv, mappedLines));
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // POST /api/v1/invoices/:id/post — post invoice (draft → posted, creates JE)
+  // -------------------------------------------------------------------------
+  fastify.post<{ Params: IdParams }>(
+    `${API_V1_PREFIX}/invoices/:id/post`,
+    {
+      schema: {
+        description: 'Post an invoice — changes status from draft to posted and creates a Journal Entry (Dr AR / Cr Revenue)',
+        tags: ['ar'],
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: 'object',
+          required: ['id'],
+          properties: { id: { type: 'string' } },
+        },
+        response: { 200: { description: 'Invoice posted', ...invoiceResponseSchema } },
+      },
+      preHandler: [requireAuth, requirePermission(AR_INVOICE_CREATE)],
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      const { tenantId, sub: userId } = request.user;
+
+      const rows = await fastify.sql<[InvoiceRow?]>`
+        SELECT * FROM invoices WHERE id = ${id} AND tenant_id = ${tenantId} LIMIT 1
+      `;
+      const inv = rows[0];
+      if (!inv) {
+        throw new NotFoundError({ detail: `Invoice ${id} not found.` });
+      }
+      if (inv.status !== 'draft') {
+        throw new ConflictError({
+          detail: `Invoice ${id} cannot be posted — current status is "${inv.status}". Only draft invoices can be posted.`,
+        });
+      }
+
+      // Fetch line items to create JE lines per revenue account
+      const lines = await fastify.sql<InvoiceLineRow[]>`
+        SELECT * FROM invoice_line_items WHERE invoice_id = ${id} ORDER BY line_number
+      `;
+
+      // Look up AR account (code 1100) and Revenue account (code 4000) for this tenant
+      const arAccounts = await fastify.sql<[{ id: string }?]>`
+        SELECT id FROM chart_of_accounts
+        WHERE tenant_id = ${tenantId} AND code LIKE '1100%' AND account_type = 'asset'
+        ORDER BY code ASC LIMIT 1
+      `;
+      const revAccounts = await fastify.sql<[{ id: string }?]>`
+        SELECT id FROM chart_of_accounts
+        WHERE tenant_id = ${tenantId} AND account_type = 'revenue'
+        ORDER BY code ASC LIMIT 1
+      `;
+
+      const arAccountId = arAccounts[0]?.id ?? null;
+      const revAccountId = revAccounts[0]?.id ?? null;
+
+      // Create Journal Entry: Dr AR (total), Cr Revenue per line
+      const jeId = crypto.randomUUID();
+      const jeNumber = `INV-JE-${Date.now()}`;
+      const now = new Date();
+      const fiscalYear = now.getFullYear();
+      const fiscalPeriod = now.getMonth() + 1;
+      const totalSatang = BigInt(inv.total_satang);
+
+      await fastify.sql`
+        INSERT INTO journal_entries (id, document_number, description, status, fiscal_year, fiscal_period, tenant_id, created_by, posted_at)
+        VALUES (
+          ${jeId}, ${jeNumber},
+          ${'Invoice posted: ' + inv.invoice_number},
+          'posted', ${fiscalYear}, ${fiscalPeriod},
+          ${tenantId}, ${userId}, NOW()
+        )
+      `;
+
+      // Dr AR (entire invoice total)
+      if (arAccountId) {
+        await fastify.sql`
+          INSERT INTO journal_entry_lines (id, entry_id, line_number, account_id, description, debit_satang, credit_satang)
+          VALUES (
+            ${crypto.randomUUID()}, ${jeId}, 1,
+            ${arAccountId},
+            ${'Accounts Receivable — ' + inv.invoice_number},
+            ${totalSatang.toString()}::bigint, 0
+          )
+        `;
+      }
+
+      // Cr Revenue — one line per invoice line item
+      let lineNum = 2;
+      for (const line of lines) {
+        const accountId = line.account_id ?? revAccountId;
+        if (accountId) {
+          await fastify.sql`
+            INSERT INTO journal_entry_lines (id, entry_id, line_number, account_id, description, debit_satang, credit_satang)
+            VALUES (
+              ${crypto.randomUUID()}, ${jeId}, ${lineNum},
+              ${accountId},
+              ${line.description},
+              0, ${BigInt(line.total_satang).toString()}::bigint
+            )
+          `;
+          lineNum++;
+        }
+      }
+
+      // Update invoice: draft → posted
+      const updatedRows = await fastify.sql<[InvoiceRow?]>`
+        UPDATE invoices
+        SET status = 'posted', posted_at = NOW(), journal_entry_id = ${jeId}, updated_at = NOW()
+        WHERE id = ${id} AND tenant_id = ${tenantId}
+        RETURNING *
+      `;
+
+      const updated = updatedRows[0];
+      if (!updated) {
+        throw new NotFoundError({ detail: `Invoice ${id} not found after update.` });
+      }
+
+      request.log.info({ invoiceId: id, jeId, tenantId }, 'Invoice posted with JE');
+
+      const mappedLines = lines.map((l) => ({
+        id: l.id,
+        lineNumber: l.line_number,
+        description: l.description,
+        quantity: l.quantity,
+        unitPriceSatang: l.unit_price_satang.toString(),
+        totalSatang: l.total_satang.toString(),
+        accountId: l.account_id,
+      }));
+
+      return reply.status(200).send(buildInvoiceResponse(updated, mappedLines));
     },
   );
 
@@ -283,17 +568,45 @@ export async function invoiceRoutes(
       },
       preHandler: [requireAuth, requirePermission(AR_INVOICE_VOID)],
     },
-    async (request, _reply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const { tenantId } = request.user;
 
-      // TODO: Update invoices table when schema is available.
-      // Status transition: draft|sent → void (paid/partial cannot be voided).
-      request.log.debug({ invoiceId: id, tenantId }, 'Void invoice (stub)');
+      // Check for existing payments — cannot void an invoice that has payments
+      const paymentCheck = await fastify.sql<[{ count: string }?]>`
+        SELECT count(*)::text as count FROM invoice_payments ip
+        JOIN ar_payments ap ON ap.id = ip.payment_id
+        WHERE ip.invoice_id = ${id} AND ap.status != 'voided'
+      `;
+      const paymentCount = parseInt(paymentCheck[0]?.count ?? '0', 10);
+      if (paymentCount > 0) {
+        throw new ConflictError({
+          detail: 'Invoice has been partially or fully paid. Void the payments first.',
+        });
+      }
 
-      throw new NotFoundError({
-        detail: `Invoice ${id} not found. (AR invoice table not yet available)`,
-      });
+      const rows = await fastify.sql<[InvoiceRow?]>`
+        UPDATE invoices
+        SET status = 'void', updated_at = NOW()
+        WHERE id = ${id} AND tenant_id = ${tenantId} AND status IN ('draft', 'sent')
+        RETURNING *
+      `;
+      const inv = rows[0];
+      if (!inv) {
+        const existing = await fastify.sql<[{ id: string; status: string }?]>`
+          SELECT id, status FROM invoices WHERE id = ${id} AND tenant_id = ${tenantId} LIMIT 1
+        `;
+        if (!existing[0]) {
+          throw new NotFoundError({ detail: `Invoice ${id} not found.` });
+        }
+        throw new ValidationError({
+          detail: `Invoice ${id} cannot be voided — current status is "${existing[0].status}".`,
+        });
+      }
+
+      request.log.info({ invoiceId: id, tenantId }, 'Invoice voided');
+
+      return reply.status(200).send(buildInvoiceResponse(inv, []));
     },
   );
 }

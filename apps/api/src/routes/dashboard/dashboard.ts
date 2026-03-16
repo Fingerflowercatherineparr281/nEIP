@@ -224,7 +224,7 @@ export async function dashboardRoutes(
       // 1. Revenue trend (last 6 months)
       const revenueTrendRows = await fastify.sql<MonthlyRevenueRow[]>`
         SELECT
-          to_char(je.entry_date, 'YYYY-MM') as month,
+          to_char(je.posted_at, 'YYYY-MM') as month,
           COALESCE(SUM(jel.credit_satang) - SUM(jel.debit_satang), 0)::text as total_revenue
         FROM journal_entries je
         JOIN journal_entry_lines jel ON jel.entry_id = je.id
@@ -232,9 +232,9 @@ export async function dashboardRoutes(
         WHERE je.tenant_id = ${tenantId}
           AND je.status = 'posted'
           AND coa.account_type = 'revenue'
-          AND je.entry_date >= (CURRENT_DATE - INTERVAL '6 months')
-          AND je.entry_date <= CURRENT_DATE
-        GROUP BY to_char(je.entry_date, 'YYYY-MM')
+          AND je.posted_at >= (CURRENT_DATE - INTERVAL '6 months')
+          AND je.posted_at <= CURRENT_DATE
+        GROUP BY to_char(je.posted_at, 'YYYY-MM')
         ORDER BY month
       `;
 
@@ -249,8 +249,8 @@ export async function dashboardRoutes(
         WHERE je.tenant_id = ${tenantId}
           AND je.status = 'posted'
           AND coa.account_type = 'expense'
-          AND je.entry_date >= ${start}::date
-          AND je.entry_date <= ${end}::date
+          AND je.posted_at >= ${start}::date
+          AND je.posted_at <= ${end}::date
         GROUP BY coa.account_type, coa.code, coa.name_en
         ORDER BY total_amount DESC
       `;
@@ -267,8 +267,8 @@ export async function dashboardRoutes(
         WHERE je.tenant_id = ${tenantId}
           AND je.status = 'posted'
           AND coa.account_type IN ('revenue', 'expense')
-          AND je.entry_date >= ${start}::date
-          AND je.entry_date <= ${end}::date
+          AND je.posted_at >= ${start}::date
+          AND je.posted_at <= ${end}::date
         GROUP BY coa.account_type
       `;
 
@@ -416,8 +416,8 @@ export async function dashboardRoutes(
           JOIN chart_of_accounts coa ON coa.id = jel.account_id
           WHERE je.status = 'posted'
             AND coa.account_type = 'revenue'
-            AND je.entry_date >= ${mtdStart}::date
-            AND je.entry_date <= ${mtdEnd}::date
+            AND je.posted_at >= ${mtdStart}::date
+            AND je.posted_at <= ${mtdEnd}::date
           GROUP BY je.tenant_id
         ),
         expense_data AS (
@@ -430,8 +430,8 @@ export async function dashboardRoutes(
           JOIN chart_of_accounts coa ON coa.id = jel.account_id
           WHERE je.status = 'posted'
             AND coa.account_type = 'expense'
-            AND je.entry_date >= ${mtdStart}::date
-            AND je.entry_date <= ${mtdEnd}::date
+            AND je.posted_at >= ${mtdStart}::date
+            AND je.posted_at <= ${mtdEnd}::date
           GROUP BY je.tenant_id
         )
         SELECT

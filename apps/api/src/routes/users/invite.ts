@@ -27,6 +27,7 @@ import {
   API_V1_PREFIX,
 } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
+import { toISO } from '../../lib/to-iso.js';
 import { requirePermission } from '../../hooks/require-permission.js';
 import { USER_INVITE } from '../../lib/permissions.js';
 import type { DefaultRoleName } from '../../lib/permissions.js';
@@ -95,7 +96,7 @@ interface UserRow {
   email: string;
   name: string;
   tenant_id: string;
-  created_at: Date;
+  created_at: Date | string;
 }
 
 interface RoleRow {
@@ -225,7 +226,7 @@ export async function inviteRoute(
         name: createdUser.name,
         tenantId: createdUser.tenant_id,
         role: targetRole.name,
-        createdAt: createdUser.created_at.toISOString(),
+        createdAt: toISO(createdUser.created_at),
       });
     },
   );

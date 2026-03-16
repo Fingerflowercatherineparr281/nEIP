@@ -31,6 +31,14 @@ export {
   notification_preferences,
   notification_log,
   tax_rates,
+  quotations,
+  quotation_lines,
+  fixed_assets,
+  bank_accounts,
+  bank_transactions,
+  wht_certificates,
+  cost_centers,
+  profit_centers,
 } from './schema/index.js';
 
 export type {
@@ -84,6 +92,22 @@ export type {
   NewNotificationLog,
   TaxRateRow,
   NewTaxRateRow,
+  Quotation,
+  NewQuotation,
+  QuotationLine,
+  NewQuotationLine,
+  FixedAsset,
+  NewFixedAsset,
+  BankAccount,
+  NewBankAccount,
+  BankTransaction,
+  NewBankTransaction,
+  WhtCertificate,
+  NewWhtCertificate,
+  CostCenter,
+  NewCostCenter,
+  ProfitCenter,
+  NewProfitCenter,
 } from './schema/index.js';
 
 // ---------------------------------------------------------------------------

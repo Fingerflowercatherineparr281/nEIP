@@ -13,7 +13,7 @@
 
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import * as argon2 from 'argon2';
-import { AuthError, API_V1_PREFIX } from '@neip/shared';
+import { AuthError, AppError, API_V1_PREFIX } from '@neip/shared';
 import { signAccessToken, signRefreshToken } from '../../lib/tokens.js';
 
 // ---------------------------------------------------------------------------
@@ -64,6 +64,59 @@ interface LoginBody {
 // Route handler
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// In-memory brute-force protection: track failed login attempts per IP.
+// Entries expire after LOGIN_WINDOW_MS (5 minutes). The global @fastify/rate-limit
+// is set to 300 req/min which is too loose for auth endpoints — we enforce a
+// stricter limit here: max 10 failed attempts per IP in the 5-minute window.
+// ---------------------------------------------------------------------------
+
+const LOGIN_MAX_ATTEMPTS = 10;
+const LOGIN_WINDOW_MS    = 5 * 60 * 1000; // 5 minutes
+
+interface AttemptRecord { count: number; firstAttemptAt: number; }
+const loginAttempts = new Map<string, AttemptRecord>();
+
+function getClientIp(request: import('fastify').FastifyRequest): string {
+  const forwarded = request.headers['x-forwarded-for'];
+  return typeof forwarded === 'string'
+    ? (forwarded.split(',')[0]?.trim() ?? request.ip)
+    : request.ip;
+}
+
+function checkLoginRateLimit(ip: string): void {
+  const now = Date.now();
+  const record = loginAttempts.get(ip);
+
+  if (!record || (now - record.firstAttemptAt) > LOGIN_WINDOW_MS) {
+    // Window expired or first attempt — reset
+    loginAttempts.set(ip, { count: 1, firstAttemptAt: now });
+    return;
+  }
+
+  if (record.count >= LOGIN_MAX_ATTEMPTS) {
+    const resetIn = Math.ceil((LOGIN_WINDOW_MS - (now - record.firstAttemptAt)) / 1000);
+    throw new AppError({
+      type: 'https://problems.neip.app/rate-limit-exceeded',
+      title: 'Too Many Requests',
+      status: 429,
+      detail: `Too many login attempts. Please try again in ${String(resetIn)} seconds.`,
+    });
+  }
+
+  record.count += 1;
+}
+
+function recordFailedLogin(ip: string): void {
+  const now = Date.now();
+  const record = loginAttempts.get(ip);
+  if (!record || (now - record.firstAttemptAt) > LOGIN_WINDOW_MS) {
+    loginAttempts.set(ip, { count: 1, firstAttemptAt: now });
+  } else {
+    record.count += 1;
+  }
+}
+
 export async function loginRoute(
   fastify: FastifyInstance,
   _options: FastifyPluginOptions,
@@ -84,6 +137,11 @@ export async function loginRoute(
       },
     },
     async (request, reply) => {
+      const clientIp = getClientIp(request);
+
+      // Brute-force guard: check before processing credentials
+      checkLoginRateLimit(clientIp);
+
       const { email, password } = request.body;
       const normalizedEmail = email.toLowerCase();
 
@@ -102,6 +160,7 @@ export async function loginRoute(
       if (!user) {
         // Run a dummy hash to prevent timing attacks through early-exit.
         await argon2.hash('dummy-password-to-prevent-timing-attack');
+        recordFailedLogin(clientIp);
         request.log.warn({ email: normalizedEmail }, 'Login attempt — unknown email');
         throw new AuthError({ detail: 'Invalid email or password.' });
       }
@@ -109,6 +168,7 @@ export async function loginRoute(
       const valid = await argon2.verify(user.password_hash, password);
 
       if (!valid) {
+        recordFailedLogin(clientIp);
         request.log.warn({ userId: user.id, email: normalizedEmail }, 'Login attempt — wrong password');
         throw new AuthError({ detail: 'Invalid email or password.' });
       }

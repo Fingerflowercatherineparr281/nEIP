@@ -12,6 +12,7 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { API_V1_PREFIX, ConflictError } from '@neip/shared';
 import { requireAuth } from '../../hooks/require-auth.js';
+import { toISO } from '../../lib/to-iso.js';
 
 // ---------------------------------------------------------------------------
 // JSON Schemas
@@ -90,7 +91,7 @@ interface AssignmentRow {
   client_tenant_id: string;
   label: string | null;
   status: string;
-  created_at: Date;
+  created_at: Date | string;
 }
 
 interface ClientListRow {
@@ -99,7 +100,7 @@ interface ClientListRow {
   client_name: string;
   label: string | null;
   status: string;
-  created_at: Date;
+  created_at: Date | string;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,7 +196,7 @@ export async function firmRoutes(
         clientTenantId: assignment.client_tenant_id,
         label: assignment.label,
         status: assignment.status,
-        createdAt: assignment.created_at.toISOString(),
+        createdAt: toISO(assignment.created_at),
       });
     },
   );
@@ -242,7 +243,7 @@ export async function firmRoutes(
           clientName: r.client_name,
           label: r.label,
           status: r.status,
-          createdAt: r.created_at.toISOString(),
+          createdAt: toISO(r.created_at),
         })),
         total: rows.length,
       });

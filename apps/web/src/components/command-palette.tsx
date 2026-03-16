@@ -33,7 +33,7 @@ interface CommandItem {
 // ---------------------------------------------------------------------------
 
 const PAGE_COMMANDS: CommandItem[] = [
-  { id: 'p-dashboard', label: 'Dashboard', category: 'Pages', href: '/', icon: LayoutDashboard },
+  { id: 'p-dashboard', label: 'Dashboard', category: 'Pages', href: '/dashboard', icon: LayoutDashboard },
   { id: 'p-approvals', label: 'Approval Queue', category: 'Pages', href: '/approvals', icon: ClipboardCheck },
   { id: 'p-invoices', label: 'Invoices', category: 'Pages', href: '/invoices', icon: FileText },
   { id: 'p-invoices-new', label: 'New Invoice', category: 'Pages', href: '/invoices/new', icon: FileText, keywords: ['create'] },
@@ -50,6 +50,10 @@ const PAGE_COMMANDS: CommandItem[] = [
   { id: 'p-settings-team', label: 'Team Settings', category: 'Pages', href: '/settings/team', icon: Settings },
   { id: 'p-settings-ai', label: 'AI Configuration', category: 'Pages', href: '/settings/ai-config', icon: Settings },
   { id: 'p-settings-fiscal', label: 'Fiscal Year Settings', category: 'Pages', href: '/settings/fiscal', icon: Settings },
+  { id: 'p-journal', label: 'Journal Entries', category: 'Pages', href: '/journal-entries', icon: FileText },
+  { id: 'p-journal-new', label: 'New Journal Entry', category: 'Pages', href: '/journal-entries/new', icon: FileText, keywords: ['create'] },
+  { id: 'p-import', label: 'Import Data', category: 'Pages', href: '/import', icon: FileText },
+  { id: 'p-accounts', label: 'Chart of Accounts', category: 'Pages', href: '/accounts', icon: FileText },
 ];
 
 // ---------------------------------------------------------------------------

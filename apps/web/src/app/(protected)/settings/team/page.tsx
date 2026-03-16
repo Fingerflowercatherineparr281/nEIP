@@ -27,7 +27,7 @@ interface TeamMember {
 }
 
 interface TeamListResponse {
-  data: TeamMember[];
+  items: TeamMember[];
 }
 
 const ROLES: { label: string; value: UserRole }[] = [
@@ -47,7 +47,7 @@ export default function TeamSettingsPage(): React.JSX.Element {
   const isOwner = currentUser?.role === 'owner';
 
   const { data, loading, refetch } = useApi<TeamListResponse>('/settings/team');
-  const members = data?.data ?? [];
+  const members = data?.items ?? [];
 
   // Invite dialog
   const [showInvite, setShowInvite] = useState(false);
