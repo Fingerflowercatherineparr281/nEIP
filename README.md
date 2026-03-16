@@ -51,7 +51,7 @@ pnpm --filter web dev -- -p 3100
 ├─ Shared Packages ─────────────────────┤
 │ @neip/shared · @neip/core · @neip/db │
 │ @neip/ai · @neip/tax                 │
-├─ Business Modules (SAP Equivalent) ──┤
+├─ Business Modules (ERP Standard) ──┤
 │ FI: GL·AR·AP·Assets·Bank·WHT·Tax    │
 │ SD: QT→SO→DO→Invoice→Receipt→CN      │
 │ MM: PO→Bill→Payment · Inventory      │
@@ -64,7 +64,7 @@ pnpm --filter web dev -- -p 3100
 └───────────────────────────────────────┘
 ```
 
-## Modules (31 SAP-equivalent)
+## Modules (31 enterprise-grade)
 
 | Module | Description | API | Web | CLI |
 |--------|-------------|:---:|:---:|:---:|
