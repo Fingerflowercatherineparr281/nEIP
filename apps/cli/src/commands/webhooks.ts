@@ -26,18 +26,14 @@ interface Webhook {
   createdAt: string;
 }
 
-/** Paginated list response wrapper. */
-interface PaginatedResponse<T> {
+/** List response wrapper (API returns { data: [...] }). */
+interface ListResponse<T> {
   data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
 }
 
 /** Options accepted by `webhooks list`. */
 interface WebhooksListOptions {
-  page: string;
-  pageSize: string;
+  limit: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -61,22 +57,21 @@ function promptLine(question: string): Promise<string> {
 
 async function webhooksList(options: WebhooksListOptions): Promise<void> {
   const params: Record<string, string> = {
-    page: options.page,
-    pageSize: options.pageSize,
+    limit: options.limit,
   };
 
-  const result = await api.get<PaginatedResponse<Webhook>>('/api/v1/webhooks', params);
+  const result = await api.get<ListResponse<Webhook>>('/api/v1/webhooks', params);
 
   if (!result.ok) {
     printError(result.error.detail, result.error.status);
     process.exit(1);
   }
 
-  const { data, total, page, pageSize } = result.data;
+  const { data } = result.data;
 
   printSuccess(
     data,
-    `Showing ${String(data.length)} of ${String(total)} webhooks (page ${String(page)}/${String(Math.ceil(total / pageSize))})`,
+    `Showing ${String(data.length)} webhooks`,
   );
 }
 
@@ -156,8 +151,7 @@ Available events: invoice.created, invoice.paid, payment.received,
   webhooks
     .command('list')
     .description('แสดงรายการ webhook endpoints ทั้งหมด — List all registered webhook endpoints')
-    .option('--page <number>', 'หน้าที่ — Page number', '1')
-    .option('--page-size <number>', 'จำนวนต่อหน้า — Number of webhooks per page', '20')
+    .option('--limit <number>', 'จำนวนสูงสุด — Maximum number of webhooks to return', '50')
     .action(async (options: WebhooksListOptions) => {
       await webhooksList(options);
     });

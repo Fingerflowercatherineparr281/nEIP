@@ -27,18 +27,14 @@ interface TaxRate {
   createdAt: string;
 }
 
-/** Paginated list response wrapper. */
-interface PaginatedResponse<T> {
+/** List response wrapper (API returns { data: [...] }). */
+interface ListResponse<T> {
   data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
 }
 
 /** Options accepted by `tax list`. */
 interface TaxListOptions {
-  page: string;
-  pageSize: string;
+  limit: string;
   active?: string;
 }
 
@@ -63,26 +59,25 @@ function promptLine(question: string): Promise<string> {
 
 async function taxList(options: TaxListOptions): Promise<void> {
   const params: Record<string, string> = {
-    page: options.page,
-    pageSize: options.pageSize,
+    limit: options.limit,
   };
 
   if (options.active !== undefined && options.active !== '') {
     params['active'] = options.active;
   }
 
-  const result = await api.get<PaginatedResponse<TaxRate>>('/api/v1/tax-rates', params);
+  const result = await api.get<ListResponse<TaxRate>>('/api/v1/tax-rates', params);
 
   if (!result.ok) {
     printError(result.error.detail, result.error.status);
     process.exit(1);
   }
 
-  const { data, total, page, pageSize } = result.data;
+  const { data } = result.data;
 
   printSuccess(
     data,
-    `Showing ${String(data.length)} of ${String(total)} tax rates (page ${String(page)}/${String(Math.ceil(total / pageSize))})`,
+    `Showing ${String(data.length)} tax rates`,
   );
 }
 
@@ -203,8 +198,7 @@ Examples:
   tax
     .command('list')
     .description('แสดงอัตราภาษีทั้งหมด — List all tax rates')
-    .option('--page <number>', 'หน้าที่ (เริ่มต้น 1) — Page number', '1')
-    .option('--page-size <number>', 'จำนวนต่อหน้า — Number of tax rates per page', '20')
+    .option('--limit <number>', 'จำนวนสูงสุด — Maximum number of tax rates to return', '50')
     .option('--active <bool>', 'กรองตาม active status: true หรือ false — Filter by active status')
     .action(async (options: TaxListOptions) => {
       await taxList(options);

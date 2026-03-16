@@ -39,18 +39,14 @@ interface FiscalPeriod {
   status: 'open' | 'closed';
 }
 
-/** Paginated list response wrapper. */
-interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
+/** List response wrapper (API returns { items: [...] }). */
+interface ItemsResponse<T> {
+  items: T[];
 }
 
 /** Options accepted by `fiscal years list` (implicit). */
 interface FiscalYearsListOptions {
-  page: string;
-  pageSize: string;
+  limit: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,22 +70,21 @@ function promptLine(question: string): Promise<string> {
 
 async function fiscalYearsList(options: FiscalYearsListOptions): Promise<void> {
   const params: Record<string, string> = {
-    page: options.page,
-    pageSize: options.pageSize,
+    limit: options.limit,
   };
 
-  const result = await api.get<PaginatedResponse<FiscalYear>>('/api/v1/fiscal-years', params);
+  const result = await api.get<ItemsResponse<FiscalYear>>('/api/v1/fiscal-years', params);
 
   if (!result.ok) {
     printError(result.error.detail, result.error.status);
     process.exit(1);
   }
 
-  const { data, total, page, pageSize } = result.data;
+  const { items } = result.data;
 
   printSuccess(
-    data,
-    `Showing ${String(data.length)} of ${String(total)} fiscal years (page ${String(page)}/${String(Math.ceil(total / pageSize))})`,
+    items,
+    `Showing ${String(items.length)} fiscal years`,
   );
 }
 
@@ -183,8 +178,7 @@ Examples:
     .description('จัดการปีบัญชี — Fiscal year operations');
 
   years
-    .option('--page <number>', 'หน้าที่ — Page number', '1')
-    .option('--page-size <number>', 'จำนวนต่อหน้า — Number of fiscal years per page', '20')
+    .option('--limit <number>', 'จำนวนสูงสุด — Maximum number of fiscal years to return', '20')
     .action(async (options: FiscalYearsListOptions) => {
       await fiscalYearsList(options);
     });

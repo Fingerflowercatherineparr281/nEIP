@@ -31,3 +31,16 @@
 - Thai compliance: VAT 7%, WHT, SSC, PDPA, TFAC
 - Audit trail: auto-log all mutations
 - 417 unit tests passing
+
+## [0.3.0] - 2026-03-16
+
+### Added
+- MCP Server expanded: 13 → 53 tools (list + create + action + report for all modules)
+
+### Fixed
+- CLI: auth login piped stdin TTY detection
+- CLI: invoice/payment/bill response shape (items vs data)
+- CLI: tax/roles/webhooks flat array handling
+- CLI: settings response unwrapping
+- CLI: AR paths /ar/invoices → /invoices
+- All 34 CLI commands verified passing

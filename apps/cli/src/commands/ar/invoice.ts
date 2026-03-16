@@ -50,12 +50,13 @@ interface Invoice {
   createdAt: string;
 }
 
-/** Paginated list response wrapper. */
+/** Paginated list response wrapper (API returns items/total/limit/offset). */
 interface PaginatedResponse<T> {
-  data: T[];
+  items: T[];
   total: number;
-  page: number;
-  pageSize: number;
+  limit: number;
+  offset: number;
+  hasMore?: boolean;
 }
 
 /** Options accepted by `ar invoice list`. */
@@ -173,9 +174,11 @@ async function invoiceCreate(): Promise<void> {
 }
 
 async function invoiceList(options: InvoiceListOptions): Promise<void> {
+  const pageNum = parseInt(options.page, 10);
+  const pageSizeNum = parseInt(options.pageSize, 10);
   const params: Record<string, string> = {
-    page: options.page,
-    pageSize: options.pageSize,
+    limit: options.pageSize,
+    offset: String((pageNum - 1) * pageSizeNum),
   };
 
   if (options.status !== undefined && options.status !== '') {
@@ -195,11 +198,13 @@ async function invoiceList(options: InvoiceListOptions): Promise<void> {
     process.exit(1);
   }
 
-  const { data, total, page, pageSize } = result.data;
+  const { items, total, limit, offset } = result.data;
+  const page = Math.floor(offset / limit) + 1;
+  const totalPages = Math.ceil(total / limit) || 1;
 
   printSuccess(
-    data,
-    `Showing ${String(data.length)} of ${String(total)} invoices (page ${String(page)}/${String(Math.ceil(total / pageSize))})`,
+    items,
+    `Showing ${String(items.length)} of ${String(total)} invoices (page ${String(page)}/${String(totalPages)})`,
   );
 }
 

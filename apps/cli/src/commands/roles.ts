@@ -27,18 +27,14 @@ interface Role {
   createdAt: string;
 }
 
-/** Paginated list response wrapper. */
-interface PaginatedResponse<T> {
+/** List response wrapper (API returns { data: [...] }). */
+interface ListResponse<T> {
   data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
 }
 
 /** Options accepted by `roles list`. */
 interface RolesListOptions {
-  page: string;
-  pageSize: string;
+  limit: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -62,22 +58,21 @@ function promptLine(question: string): Promise<string> {
 
 async function rolesList(options: RolesListOptions): Promise<void> {
   const params: Record<string, string> = {
-    page: options.page,
-    pageSize: options.pageSize,
+    limit: options.limit,
   };
 
-  const result = await api.get<PaginatedResponse<Role>>('/api/v1/roles', params);
+  const result = await api.get<ListResponse<Role>>('/api/v1/roles', params);
 
   if (!result.ok) {
     printError(result.error.detail, result.error.status);
     process.exit(1);
   }
 
-  const { data, total, page, pageSize } = result.data;
+  const { data } = result.data;
 
   printSuccess(
     data,
-    `Showing ${String(data.length)} of ${String(total)} roles (page ${String(page)}/${String(Math.ceil(total / pageSize))})`,
+    `Showing ${String(data.length)} roles`,
   );
 }
 
@@ -188,8 +183,7 @@ Permissions format: invoices.read, payments.write, reports.view, ...
   roles
     .command('list')
     .description('แสดงรายการ roles ทั้งหมดในองค์กร — List all roles in the organisation')
-    .option('--page <number>', 'หน้าที่ — Page number', '1')
-    .option('--page-size <number>', 'จำนวนต่อหน้า — Number of roles per page', '20')
+    .option('--limit <number>', 'จำนวนสูงสุด — Maximum number of roles to return', '50')
     .action(async (options: RolesListOptions) => {
       await rolesList(options);
     });

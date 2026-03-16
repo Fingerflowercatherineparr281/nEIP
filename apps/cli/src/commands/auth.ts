@@ -41,42 +41,54 @@ interface JwtClaims {
 /**
  * Prompt the user for a value on stdin and return what they typed.
  * When `hidden` is true the input is masked (used for passwords).
+ * Falls back gracefully to plain readline when stdin is not a TTY
+ * (e.g. when input is piped via `printf "email\npass\n" | neip auth login`).
  */
 async function prompt(question: string, hidden = false): Promise<string> {
   return new Promise((resolve) => {
+    const isTTY = process.stdin.isTTY === true;
+
+    // If not a TTY (piped) or hidden mode not needed, use plain readline
+    if (!hidden || !isTTY) {
+      const rl = createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        terminal: false,
+      });
+      process.stdout.write(question);
+      rl.once('line', (answer) => {
+        rl.close();
+        resolve(answer.trim());
+      });
+      return;
+    }
+
+    // TTY hidden mode — suppress echoing with setRawMode
     const rl = createInterface({
       input: process.stdin,
       output: process.stdout,
       terminal: true,
     });
 
-    if (hidden) {
-      // Write the prompt manually so we can suppress echoing
-      process.stdout.write(question);
-      process.stdin.setRawMode(true);
+    process.stdout.write(question);
+    process.stdin.setRawMode(true);
 
-      let input = '';
-      process.stdin.on('data', function onData(buf: Buffer) {
-        const char = buf.toString();
-        if (char === '\n' || char === '\r' || char === '\u0003') {
-          process.stdin.setRawMode(false);
-          process.stdin.removeListener('data', onData);
-          process.stdout.write('\n');
-          rl.close();
-          resolve(input);
-        } else if (char === '\u007f') {
-          // Backspace
-          input = input.slice(0, -1);
-        } else {
-          input += char;
-        }
-      });
-    } else {
-      rl.question(question, (answer) => {
+    let input = '';
+    process.stdin.on('data', function onData(buf: Buffer) {
+      const char = buf.toString();
+      if (char === '\n' || char === '\r' || char === '\u0003') {
+        process.stdin.setRawMode(false);
+        process.stdin.removeListener('data', onData);
+        process.stdout.write('\n');
         rl.close();
-        resolve(answer);
-      });
-    }
+        resolve(input);
+      } else if (char === '\u007f') {
+        // Backspace
+        input = input.slice(0, -1);
+      } else {
+        input += char;
+      }
+    });
   });
 }
 
