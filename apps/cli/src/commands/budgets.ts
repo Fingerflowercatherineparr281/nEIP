@@ -34,18 +34,18 @@ interface Budget {
   createdAt: string;
 }
 
-/** Paginated list response wrapper. */
+/** Paginated list response wrapper (API returns items/total/limit/offset). */
 interface PaginatedResponse<T> {
-  data: T[];
+  items: T[];
   total: number;
-  page: number;
-  pageSize: number;
+  limit: number;
+  offset: number;
+  hasMore?: boolean;
 }
 
 /** Options accepted by `budgets list`. */
 interface BudgetsListOptions {
-  page: string;
-  pageSize: string;
+  limit: string;
   year?: string;
   status?: string;
 }
@@ -71,8 +71,7 @@ function promptLine(question: string): Promise<string> {
 
 async function budgetsList(options: BudgetsListOptions): Promise<void> {
   const params: Record<string, string> = {
-    page: options.page,
-    pageSize: options.pageSize,
+    limit: options.limit,
   };
 
   if (options.year !== undefined && options.year !== '') params['year'] = options.year;
@@ -85,11 +84,11 @@ async function budgetsList(options: BudgetsListOptions): Promise<void> {
     process.exit(1);
   }
 
-  const { data, total, page, pageSize } = result.data;
+  const { items, total } = result.data;
 
   printSuccess(
-    data,
-    `Showing ${String(data.length)} of ${String(total)} budgets (page ${String(page)}/${String(Math.ceil(total / pageSize))})`,
+    items,
+    `Showing ${String(items.length)} of ${String(total)} budgets`,
   );
 }
 
@@ -214,8 +213,7 @@ Examples:
   budgets
     .command('list')
     .description('แสดงงบประมาณทั้งหมด — List all budgets with optional filters')
-    .option('--page <number>', 'หน้าที่ — Page number', '1')
-    .option('--page-size <number>', 'จำนวนต่อหน้า — Number of budgets per page', '20')
+    .option('--limit <number>', 'จำนวนสูงสุด — Maximum number of budgets to return', '50')
     .option('--year <year>', 'กรองตามปี — Filter by calendar year')
     .option('--status <status>', 'กรองตามสถานะ: draft, approved, archived — Filter by status')
     .action(async (options: BudgetsListOptions) => {

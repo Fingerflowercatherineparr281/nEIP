@@ -50,12 +50,13 @@ interface Payment {
   createdAt: string;
 }
 
-/** Paginated list response wrapper. */
+/** Paginated list response wrapper (API returns items/total/limit/offset). */
 interface PaginatedResponse<T> {
-  data: T[];
+  items: T[];
   total: number;
-  page: number;
-  pageSize: number;
+  limit: number;
+  offset: number;
+  hasMore?: boolean;
 }
 
 /** Options accepted by `ar payment list`. */
@@ -172,7 +173,7 @@ async function paymentCreate(): Promise<void> {
   };
 
   const result = await api.post<{ data: Payment }>(
-    '/api/v1/ar/payments',
+    '/api/v1/payments',
     payload,
   );
 
@@ -185,9 +186,11 @@ async function paymentCreate(): Promise<void> {
 }
 
 async function paymentList(options: PaymentListOptions): Promise<void> {
+  const pageNum = parseInt(options.page, 10);
+  const pageSizeNum = parseInt(options.pageSize, 10);
   const params: Record<string, string> = {
-    page: options.page,
-    pageSize: options.pageSize,
+    limit: options.pageSize,
+    offset: String((pageNum - 1) * pageSizeNum),
   };
 
   if (options.customerId !== undefined && options.customerId !== '') {
@@ -198,7 +201,7 @@ async function paymentList(options: PaymentListOptions): Promise<void> {
   }
 
   const result = await api.get<PaginatedResponse<Payment>>(
-    '/api/v1/ar/payments',
+    '/api/v1/payments',
     params,
   );
 
@@ -207,11 +210,13 @@ async function paymentList(options: PaymentListOptions): Promise<void> {
     process.exit(1);
   }
 
-  const { data, total, page, pageSize } = result.data;
+  const { items, total, limit, offset } = result.data;
+  const page = Math.floor(offset / limit) + 1;
+  const totalPages = Math.ceil(total / limit) || 1;
 
   printSuccess(
-    data,
-    `Showing ${String(data.length)} of ${String(total)} payments (page ${String(page)}/${String(Math.ceil(total / pageSize))})`,
+    items,
+    `Showing ${String(items.length)} of ${String(total)} payments (page ${String(page)}/${String(totalPages)})`,
   );
 }
 

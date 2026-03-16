@@ -68,7 +68,7 @@ function requireOrgId(): string {
 async function settingsGet(): Promise<void> {
   const orgId = requireOrgId();
 
-  const result = await api.get<{ data: Organisation }>(`/api/v1/organizations/${orgId}`);
+  const result = await api.get<Organisation>(`/api/v1/organizations/${orgId}`);
 
   if (!result.ok) {
     printError(result.error.detail, result.error.status);
@@ -106,7 +106,7 @@ async function settingsUpdate(): Promise<void> {
     process.exit(1);
   }
 
-  const result = await api.put<{ data: Organisation }>(`/api/v1/organizations/${orgId}`, body);
+  const result = await api.put<Organisation>(`/api/v1/organizations/${orgId}`, body);
 
   if (!result.ok) {
     printError(result.error.detail, result.error.status);
@@ -143,7 +143,7 @@ async function settingsAi(): Promise<void> {
     process.exit(1);
   }
 
-  const result = await api.put<{ data: Organisation }>(`/api/v1/organizations/${orgId}/settings`, body);
+  const result = await api.put<Organisation>(`/api/v1/organizations/${orgId}/settings`, body);
 
   if (!result.ok) {
     printError(result.error.detail, result.error.status);
