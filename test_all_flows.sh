@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 # =============================================================================
 # nEIP — Full Integration Test Suite
 # Tests ALL status transitions via curl
