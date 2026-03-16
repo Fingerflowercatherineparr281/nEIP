@@ -294,8 +294,8 @@ export async function visitPage(
     }
   }
 
-  // Phase 3: Final spinner wait (60s)
-  const finalDeadline = Date.now() + 60000;
+  // Phase 3: Final spinner wait (30s)
+  const finalDeadline = Date.now() + 30000;
   while (Date.now() < finalDeadline) {
     const spinning = await page.locator('.animate-spin').isVisible().catch(() => false);
     if (!spinning) break;

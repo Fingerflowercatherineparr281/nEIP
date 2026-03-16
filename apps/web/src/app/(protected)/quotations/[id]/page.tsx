@@ -489,7 +489,7 @@ export default function QuotationDetailPage(): React.JSX.Element {
               </tr>
             </thead>
             <tbody>
-              {quotation.lines.map((line) => (
+              {(quotation.lines ?? []).filter((line): line is NonNullable<typeof line> => line != null).map((line) => (
                 <tr key={line.id} className="border-b border-[var(--color-border)]">
                   <td className="px-3 py-2 text-[var(--color-muted-foreground)]">
                     {line.lineNumber}
@@ -497,13 +497,20 @@ export default function QuotationDetailPage(): React.JSX.Element {
                   <td className="px-3 py-2">{line.description}</td>
                   <td className="px-3 py-2 text-right font-mono text-xs">{line.quantity}</td>
                   <td className="px-3 py-2 text-right">
-                    <MoneyDisplay amount={BigInt(line.unitPriceSatang)} size="sm" />
+                    <MoneyDisplay amount={BigInt(line.unitPriceSatang || 0)} size="sm" />
                   </td>
                   <td className="px-3 py-2 text-right">
-                    <MoneyDisplay amount={BigInt(line.amountSatang)} size="sm" />
+                    <MoneyDisplay amount={BigInt(line.amountSatang || 0)} size="sm" />
                   </td>
                 </tr>
               ))}
+              {(quotation.lines ?? []).filter((line): line is NonNullable<typeof line> => line != null).length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-3 py-4 text-center text-[var(--color-muted-foreground)] text-sm">
+                    No line items
+                  </td>
+                </tr>
+              )}
             </tbody>
             <tfoot>
               <tr className="font-semibold">
@@ -511,7 +518,7 @@ export default function QuotationDetailPage(): React.JSX.Element {
                   Total
                 </td>
                 <td className="px-3 py-3 text-right">
-                  <MoneyDisplay amount={BigInt(quotation.totalSatang)} size="md" />
+                  <MoneyDisplay amount={BigInt(quotation.totalSatang || 0)} size="md" />
                 </td>
               </tr>
             </tfoot>

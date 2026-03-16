@@ -34,8 +34,8 @@ interface Invoice {
 
 /** Map API status to DocumentStatusValue (API uses 'void', UI uses 'voided') */
 function mapStatus(s: string): DocumentStatusValue {
-  if (s === 'void') return 'voided';
-  return s as DocumentStatusValue;
+  const map: Record<string, DocumentStatusValue> = { void: 'voided', converted: 'approved', expired: 'rejected' };
+  return (map[s] ?? s) as DocumentStatusValue;
 }
 
 interface InvoiceListResponse {
@@ -164,7 +164,7 @@ export default function InvoicesPage(): React.JSX.Element {
                     {inv.customerId}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(inv.totalSatang ?? 0)} size="sm" />
+                    <MoneyDisplay amount={BigInt(inv.totalSatang || 0)} size="sm" />
                   </td>
                   <td className={cn(
                     'px-4 py-3',

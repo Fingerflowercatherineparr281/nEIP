@@ -17,13 +17,19 @@ import { MoneyDisplay } from '@/components/domain/money-display';
 import { DocumentStatus } from '@/components/domain/document-status';
 import type { DocumentStatusValue } from '@/components/domain/document-status';
 
+/** Map API status to DocumentStatusValue ('void' → 'voided', 'cancelled' → 'cancelled') */
+function mapStatus(s: string): DocumentStatusValue {
+  const map: Record<string, DocumentStatusValue> = { void: 'voided', converted: 'approved', expired: 'rejected' };
+  return (map[s] ?? s) as DocumentStatusValue;
+}
+
 interface SalesOrder {
   id: string;
   documentNumber: string;
   customerName: string;
   totalSatang: string;
   orderDate: string;
-  status: DocumentStatusValue;
+  status: string;
 }
 
 interface SalesOrderListResponse {
@@ -134,13 +140,13 @@ export default function SalesOrdersPage(): React.JSX.Element {
                   <td className="px-4 py-3 font-mono-figures font-medium">{so.documentNumber}</td>
                   <td className="px-4 py-3">{so.customerName}</td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(so.totalSatang)} size="sm" />
+                    <MoneyDisplay amount={BigInt(so.totalSatang || 0)} size="sm" />
                   </td>
                   <td className="px-4 py-3 text-[var(--color-muted-foreground)]">
                     {new Date(so.orderDate).toLocaleDateString('th-TH')}
                   </td>
                   <td className="px-4 py-3">
-                    <DocumentStatus status={so.status} size="sm" />
+                    <DocumentStatus status={mapStatus(so.status)} size="sm" />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
@@ -150,7 +156,7 @@ export default function SalesOrdersPage(): React.JSX.Element {
                           View
                         </Button>
                       </Link>
-                      {so.status === 'draft' && (
+                      {mapStatus(so.status) === 'draft' && (
                         <Button variant="ghost" size="sm" onClick={() => setConfirmTarget(so)}>
                           <CheckCircle className="h-3.5 w-3.5" />
                           Confirm

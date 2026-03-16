@@ -187,13 +187,13 @@ export default function FixedAssetsPage(): React.JSX.Element {
                     {asset.category.replace('_', ' ')}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(asset.purchaseCostSatang)} size="sm" />
+                    <MoneyDisplay amount={BigInt(asset.purchaseCostSatang || 0)} size="sm" />
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(asset.accumulatedDepreciationSatang)} size="sm" />
+                    <MoneyDisplay amount={BigInt(asset.accumulatedDepreciationSatang || 0)} size="sm" />
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(asset.netBookValueSatang)} size="sm" />
+                    <MoneyDisplay amount={BigInt(asset.netBookValueSatang || 0)} size="sm" />
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[asset.status] ?? ''}`}>

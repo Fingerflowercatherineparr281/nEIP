@@ -11,8 +11,6 @@ import { FilterBar } from '@/components/ui/filter-bar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SkeletonRow } from '@/components/ui/skeleton';
 import { MoneyDisplay } from '@/components/domain/money-display';
-import { DocumentStatus } from '@/components/domain/document-status';
-import type { DocumentStatusValue } from '@/components/domain/document-status';
 import { CreditCard } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -23,14 +21,37 @@ interface Payment {
   id: string;
   paymentNumber: string;
   customerId: string;
-  /** Amount in satang */
-  amountSatang: number;
+  /** Amount in satang — API returns string */
+  amountSatang: string;
   paymentDate: string;
   paymentMethod: string;
   reference: string | null;
-  status: DocumentStatusValue;
+  /** API returns 'unmatched' | 'matched' | 'voided' */
+  status: string;
   invoiceId: string | null;
 }
+
+/** Map API payment status to a display-friendly label */
+function formatPaymentStatus(s: string): string {
+  const labels: Record<string, string> = {
+    unmatched: 'Unmatched',
+    matched: 'Matched',
+    voided: 'Voided',
+    void: 'Voided',
+    pending: 'Pending',
+    approved: 'Approved',
+  };
+  return labels[s] ?? s;
+}
+
+const PAYMENT_STATUS_COLORS: Record<string, string> = {
+  unmatched: 'bg-yellow-50 text-yellow-700 border border-yellow-200',
+  matched: 'bg-green-50 text-green-700 border border-green-200',
+  voided: 'bg-red-50 text-red-700 border border-red-200',
+  void: 'bg-red-50 text-red-700 border border-red-200',
+  pending: 'bg-gray-50 text-gray-700 border border-gray-200',
+  approved: 'bg-blue-50 text-blue-700 border border-blue-200',
+};
 
 interface PaymentListResponse {
   items: Payment[];
@@ -38,9 +59,9 @@ interface PaymentListResponse {
 }
 
 const STATUS_OPTIONS = [
-  { label: 'Pending', value: 'pending' },
-  { label: 'Approved', value: 'approved' },
-  { label: 'Posted', value: 'posted' },
+  { label: 'Unmatched', value: 'unmatched' },
+  { label: 'Matched', value: 'matched' },
+  { label: 'Voided', value: 'voided' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -137,7 +158,7 @@ export default function PaymentsPage(): React.JSX.Element {
                     {pmt.customerId}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(pmt.amountSatang)} size="sm" />
+                    <MoneyDisplay amount={BigInt(pmt.amountSatang || 0)} size="sm" />
                   </td>
                   <td className="px-4 py-3 text-[var(--color-muted-foreground)]">
                     {new Date(pmt.paymentDate).toLocaleDateString('th-TH')}
@@ -146,7 +167,9 @@ export default function PaymentsPage(): React.JSX.Element {
                     {pmt.paymentMethod.replace('_', ' ')}
                   </td>
                   <td className="px-4 py-3">
-                    <DocumentStatus status={pmt.status} size="sm" />
+                    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium capitalize ${PAYMENT_STATUS_COLORS[pmt.status] ?? 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
+                      {formatPaymentStatus(pmt.status)}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     {pmt.invoiceId ? (

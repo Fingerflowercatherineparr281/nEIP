@@ -13,13 +13,19 @@ import { SkeletonRow } from '@/components/ui/skeleton';
 import { DocumentStatus } from '@/components/domain/document-status';
 import type { DocumentStatusValue } from '@/components/domain/document-status';
 
+/** Map API status to DocumentStatusValue ('void' → 'voided') */
+function mapStatus(s: string): DocumentStatusValue {
+  const map: Record<string, DocumentStatusValue> = { void: 'voided', converted: 'approved', expired: 'rejected' };
+  return (map[s] ?? s) as DocumentStatusValue;
+}
+
 interface DeliveryNote {
   id: string;
   documentNumber: string;
   customerName: string;
   salesOrderId: string;
   deliveryDate: string;
-  status: DocumentStatusValue;
+  status: string;
 }
 
 interface DeliveryNoteListResponse {
@@ -111,7 +117,7 @@ export default function DeliveryNotesPage(): React.JSX.Element {
                   <td className="px-4 py-3 text-[var(--color-muted-foreground)]">
                     {new Date(dn.deliveryDate).toLocaleDateString('th-TH')}
                   </td>
-                  <td className="px-4 py-3"><DocumentStatus status={dn.status} size="sm" /></td>
+                  <td className="px-4 py-3"><DocumentStatus status={mapStatus(dn.status)} size="sm" /></td>
                   <td className="px-4 py-3">
                     <Link href={`/delivery-notes/${dn.id}`}>
                       <Button variant="ghost" size="sm">

@@ -183,13 +183,13 @@ export default function WhtPage(): React.JSX.Element {
                   </td>
                   <td className="px-4 py-3 text-[var(--color-muted-foreground)]">{cert.paymentDate}</td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(cert.incomeAmountSatang)} size="sm" />
+                    <MoneyDisplay amount={BigInt(cert.incomeAmountSatang || 0)} size="sm" />
                   </td>
                   <td className="px-4 py-3 text-right text-[var(--color-muted-foreground)]">
                     {(cert.whtRateBasisPoints / 100).toFixed(0)}%
                   </td>
                   <td className="px-4 py-3 text-right font-medium">
-                    <MoneyDisplay amount={BigInt(cert.whtAmountSatang)} size="sm" />
+                    <MoneyDisplay amount={BigInt(cert.whtAmountSatang || 0)} size="sm" />
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[cert.status] ?? ''}`}>

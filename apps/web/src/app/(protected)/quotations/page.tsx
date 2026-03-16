@@ -211,7 +211,7 @@ export default function QuotationsPage(): React.JSX.Element {
                       {qt.subject}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <MoneyDisplay amount={BigInt(qt.totalSatang)} size="sm" />
+                      <MoneyDisplay amount={BigInt(qt.totalSatang || 0)} size="sm" />
                     </td>
                     <td
                       className={cn(

@@ -22,8 +22,8 @@ import { useAuthStore } from '@/stores/auth-store';
 // ---------------------------------------------------------------------------
 
 interface JournalEntryLine {
-  debitSatang?: number;
-  creditSatang?: number;
+  debitSatang?: number | string | null;
+  creditSatang?: number | string | null;
 }
 
 interface JournalEntry {
@@ -32,7 +32,13 @@ interface JournalEntry {
   createdAt: string;
   description: string;
   lines: JournalEntryLine[];
-  status: DocumentStatusValue;
+  /** API may return 'void' instead of 'voided' */
+  status: string;
+}
+
+function mapJEStatus(s: string): DocumentStatusValue {
+  const map: Record<string, DocumentStatusValue> = { void: 'voided', converted: 'approved', expired: 'rejected' };
+  return (map[s] ?? s) as DocumentStatusValue;
 }
 
 interface JournalEntryListResponse {
@@ -176,17 +182,17 @@ export default function JournalEntriesPage(): React.JSX.Element {
                   <td className="px-4 py-3 text-right">
                     <MoneyDisplay
                       amount={BigInt(
-                        entry.lines.reduce((sum, l) => sum + (l.debitSatang ?? 0), 0),
+                        (entry.lines ?? []).reduce((sum, l) => sum + Number(l.debitSatang ?? 0), 0),
                       )}
                       size="sm"
                     />
                   </td>
                   <td className="px-4 py-3">
-                    <DocumentStatus status={entry.status} size="sm" />
+                    <DocumentStatus status={mapJEStatus(entry.status)} size="sm" />
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-1">
-                      {(entry.status === 'draft' || entry.status === 'pending') && (
+                      {(mapJEStatus(entry.status) === 'draft' || mapJEStatus(entry.status) === 'pending') && (
                         <Button
                           variant="ghost"
                           size="sm"

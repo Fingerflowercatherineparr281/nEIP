@@ -17,6 +17,12 @@ import { MoneyDisplay } from '@/components/domain/money-display';
 import { DocumentStatus } from '@/components/domain/document-status';
 import type { DocumentStatusValue } from '@/components/domain/document-status';
 
+/** Map API status to DocumentStatusValue ('void' → 'voided') */
+function mapStatus(s: string): DocumentStatusValue {
+  const map: Record<string, DocumentStatusValue> = { void: 'voided', converted: 'approved', expired: 'rejected' };
+  return (map[s] ?? s) as DocumentStatusValue;
+}
+
 interface Receipt {
   id: string;
   documentNumber: string;
@@ -24,7 +30,7 @@ interface Receipt {
   amountSatang: string;
   receiptDate: string;
   paymentMethod: string;
-  status: DocumentStatusValue;
+  status: string;
 }
 
 interface ReceiptListResponse {
@@ -138,7 +144,7 @@ export default function ReceiptsPage(): React.JSX.Element {
                   <td className="px-4 py-3 font-mono-figures font-medium">{r.documentNumber}</td>
                   <td className="px-4 py-3">{r.customerName}</td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(r.amountSatang)} size="sm" />
+                    <MoneyDisplay amount={BigInt(r.amountSatang || 0)} size="sm" />
                   </td>
                   <td className="px-4 py-3 text-[var(--color-muted-foreground)]">
                     {new Date(r.receiptDate).toLocaleDateString('th-TH')}
@@ -146,13 +152,13 @@ export default function ReceiptsPage(): React.JSX.Element {
                   <td className="px-4 py-3 text-[var(--color-muted-foreground)]">
                     {PAYMENT_METHOD_LABELS[r.paymentMethod] ?? r.paymentMethod}
                   </td>
-                  <td className="px-4 py-3"><DocumentStatus status={r.status} size="sm" /></td>
+                  <td className="px-4 py-3"><DocumentStatus status={mapStatus(r.status)} size="sm" /></td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
                       <Link href={`/receipts/${r.id}`}>
                         <Button variant="ghost" size="sm"><Eye className="h-3.5 w-3.5" /> View</Button>
                       </Link>
-                      {r.status === 'issued' && (
+                      {mapStatus(r.status) === 'issued' && (
                         <Button variant="ghost" size="sm" onClick={() => setVoidTarget(r)}>
                           <Ban className="h-3.5 w-3.5" /> Void
                         </Button>

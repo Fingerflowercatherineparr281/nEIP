@@ -17,13 +17,19 @@ import { MoneyDisplay } from '@/components/domain/money-display';
 import { DocumentStatus } from '@/components/domain/document-status';
 import type { DocumentStatusValue } from '@/components/domain/document-status';
 
+/** Map API status to DocumentStatusValue ('void' → 'voided') */
+function mapStatus(s: string): DocumentStatusValue {
+  const map: Record<string, DocumentStatusValue> = { void: 'voided', converted: 'approved', expired: 'rejected' };
+  return (map[s] ?? s) as DocumentStatusValue;
+}
+
 interface CreditNote {
   id: string;
   documentNumber: string;
   customerName: string;
   totalSatang: string;
   reason: string;
-  status: DocumentStatusValue;
+  status: string;
   createdAt: string;
 }
 
@@ -130,16 +136,16 @@ export default function CreditNotesPage(): React.JSX.Element {
                   <td className="px-4 py-3 font-mono-figures font-medium">{cn.documentNumber}</td>
                   <td className="px-4 py-3">{cn.customerName}</td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(cn.totalSatang)} size="sm" />
+                    <MoneyDisplay amount={BigInt(cn.totalSatang || 0)} size="sm" />
                   </td>
                   <td className="px-4 py-3 text-[var(--color-muted-foreground)] max-w-32 truncate">{cn.reason}</td>
-                  <td className="px-4 py-3"><DocumentStatus status={cn.status} size="sm" /></td>
+                  <td className="px-4 py-3"><DocumentStatus status={mapStatus(cn.status)} size="sm" /></td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
                       <Link href={`/credit-notes/${cn.id}`}>
                         <Button variant="ghost" size="sm"><Eye className="h-3.5 w-3.5" /> View</Button>
                       </Link>
-                      {cn.status === 'draft' && (
+                      {mapStatus(cn.status) === 'draft' && (
                         <Button variant="ghost" size="sm" onClick={() => setIssueTarget(cn)}>
                           <CheckCircle className="h-3.5 w-3.5" /> Issue
                         </Button>

@@ -15,6 +15,12 @@ import { MoneyDisplay } from '@/components/domain/money-display';
 import { DocumentStatus } from '@/components/domain/document-status';
 import type { DocumentStatusValue } from '@/components/domain/document-status';
 
+/** Map API status to DocumentStatusValue ('void' → 'voided') */
+function mapStatus(s: string): DocumentStatusValue {
+  const map: Record<string, DocumentStatusValue> = { void: 'voided', converted: 'approved', expired: 'rejected' };
+  return (map[s] ?? s) as DocumentStatusValue;
+}
+
 // ---------------------------------------------------------------------------
 // Types — matched to actual API response
 // ---------------------------------------------------------------------------
@@ -36,7 +42,8 @@ interface InvoiceDetail {
   customerId: string;
   createdAt: string;
   dueDate: string;
-  status: DocumentStatusValue;
+  /** API may return 'void' instead of 'voided' */
+  status: string;
   /** Total in satang (may be string from API) */
   totalSatang: number | string;
   subTotalSatang?: number | string;
@@ -94,7 +101,7 @@ export default function InvoiceDetailPage(): React.JSX.Element {
   }
 
   // Use grandTotalSatang if available, otherwise totalSatang
-  const displayTotal = invoice.grandTotalSatang ?? invoice.totalSatang;
+  const displayTotal = invoice.grandTotalSatang ?? invoice.totalSatang ?? 0;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 lg:p-6">
@@ -118,7 +125,7 @@ export default function InvoiceDetailPage(): React.JSX.Element {
             <Printer className="h-3.5 w-3.5" />
             Print
           </Button>
-          {invoice.status !== 'voided' && (
+          {mapStatus(invoice.status) !== 'voided' && (
             <Button variant="destructive" size="sm" onClick={() => setShowVoid(true)}>
               <Ban className="h-3.5 w-3.5" />
               Void
@@ -160,7 +167,7 @@ export default function InvoiceDetailPage(): React.JSX.Element {
               Status
             </span>
             <div className="mt-1">
-              <DocumentStatus status={invoice.status} size="md" />
+              <DocumentStatus status={mapStatus(invoice.status)} size="md" />
             </div>
           </div>
         </div>

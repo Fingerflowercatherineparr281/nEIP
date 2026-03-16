@@ -29,9 +29,9 @@ export default defineConfig({
     ['json', { outputFile: 'apps/web/test-results/results.json' }],
   ],
 
-  // Per-test timeout: 180 seconds — allows for route compilation (90s) +
-  // reinjectAuth overhead (40s) + assertions (20s).
-  timeout: 180000,
+  // Per-test timeout: 240 seconds — allows for route compilation (90s) +
+  // reinjectAuth overhead (40s) + visitPage phases (60s+45s) + assertions (20s).
+  timeout: 240000,
 
   use: {
     baseURL: process.env['E2E_BASE_URL'] ?? 'http://localhost:3100',

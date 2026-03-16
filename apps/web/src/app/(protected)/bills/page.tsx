@@ -26,11 +26,17 @@ interface Bill {
   id: string;
   documentNumber: string;
   vendorId: string;
-  /** Amount in satang */
-  totalSatang: number;
-  paidSatang: number;
+  /** Amount in satang — API returns string */
+  totalSatang: string;
+  paidSatang: string;
   dueDate: string;
-  status: DocumentStatusValue;
+  status: string;
+}
+
+/** Map API status values to DocumentStatusValue (API uses 'void', UI uses 'voided') */
+function mapStatus(s: string): DocumentStatusValue {
+  const map: Record<string, DocumentStatusValue> = { void: 'voided', converted: 'approved', expired: 'rejected' };
+  return (map[s] ?? s) as DocumentStatusValue;
 }
 
 interface BillListResponse {
@@ -177,18 +183,18 @@ export default function BillsPage(): React.JSX.Element {
                     {bill.vendorId}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(bill.totalSatang)} size="sm" />
+                    <MoneyDisplay amount={BigInt(bill.totalSatang || 0)} size="sm" />
                   </td>
                   <td className={cn(
                     'px-4 py-3',
-                    new Date(bill.dueDate) < new Date() && bill.status !== 'voided' && bill.status !== 'paid'
+                    new Date(bill.dueDate) < new Date() && mapStatus(bill.status) !== 'voided' && mapStatus(bill.status) !== 'paid'
                       ? 'text-[var(--color-overdue)] font-medium'
                       : 'text-[var(--color-muted-foreground)]',
                   )}>
                     {new Date(bill.dueDate).toLocaleDateString('th-TH')}
                   </td>
                   <td className="px-4 py-3">
-                    <DocumentStatus status={bill.status} size="sm" />
+                    <DocumentStatus status={mapStatus(bill.status)} size="sm" />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
@@ -198,7 +204,7 @@ export default function BillsPage(): React.JSX.Element {
                           View
                         </Button>
                       </Link>
-                      {bill.status === 'draft' && (
+                      {mapStatus(bill.status) === 'draft' && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -208,7 +214,7 @@ export default function BillsPage(): React.JSX.Element {
                           Post
                         </Button>
                       )}
-                      {(bill.status === 'draft' || bill.status === 'posted') && (
+                      {(mapStatus(bill.status) === 'draft' || mapStatus(bill.status) === 'posted') && (
                         <Button
                           variant="ghost"
                           size="sm"

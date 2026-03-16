@@ -143,7 +143,7 @@ export default function BankPage(): React.JSX.Element {
               </div>
               <div className="mt-3 border-t border-[var(--color-border)] pt-3">
                 <p className="text-xs text-[var(--color-muted-foreground)]">Balance</p>
-                <MoneyDisplay amount={BigInt(acct.balanceSatang)} size="md" className="mt-0.5" />
+                <MoneyDisplay amount={BigInt(acct.balanceSatang || 0)} size="md" className="mt-0.5" />
               </div>
               <div className="mt-3 flex gap-2">
                 <Link href={`/bank/${acct.id}`} className="flex-1">

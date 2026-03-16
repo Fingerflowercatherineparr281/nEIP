@@ -14,6 +14,12 @@ import { MoneyDisplay } from '@/components/domain/money-display';
 import { DocumentStatus } from '@/components/domain/document-status';
 import type { DocumentStatusValue } from '@/components/domain/document-status';
 import { api, AppError } from '@/lib/api-client';
+
+/** Map API status values to DocumentStatusValue ('void' → 'voided') */
+function mapStatus(s: string): DocumentStatusValue {
+  const map: Record<string, DocumentStatusValue> = { void: 'voided', converted: 'approved', expired: 'rejected' };
+  return (map[s] ?? s) as DocumentStatusValue;
+}
 import { queryKeys } from '@/lib/query-client';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -33,7 +39,8 @@ interface Bill {
   id: string;
   documentNumber: string;
   vendorId: string;
-  status: DocumentStatusValue;
+  /** API may return 'void' instead of 'voided' */
+  status: string;
   totalSatang: string;
   paidSatang: string;
   dueDate: string;
@@ -295,7 +302,7 @@ export default function BillDetailPage(): React.JSX.Element {
     );
   }
 
-  const canPay = bill.status === 'posted' || bill.status === 'partial';
+  const canPay = mapStatus(bill.status) === 'posted' || mapStatus(bill.status) === 'partial';
 
   const PAYMENT_METHOD_LABELS: Record<string, string> = {
     cash: 'Cash',
@@ -325,7 +332,7 @@ export default function BillDetailPage(): React.JSX.Element {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <DocumentStatus status={bill.status} />
+          <DocumentStatus status={mapStatus(bill.status)} />
           {canPay && (
             <Button variant="primary" onClick={() => setPayDialogOpen(true)}>
               <CreditCard className="h-4 w-4" />
@@ -377,7 +384,7 @@ export default function BillDetailPage(): React.JSX.Element {
       {/* Bill lines */}
       <div>
         <h2 className="mb-3 text-base font-semibold text-[var(--color-foreground)]">Bill Lines</h2>
-        {bill.lines.length === 0 ? (
+        {(bill.lines ?? []).filter((line): line is NonNullable<typeof line> => line != null).length === 0 ? (
           <p className="text-sm text-[var(--color-muted-foreground)]">No line items.</p>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-[var(--color-border)]">
@@ -396,7 +403,7 @@ export default function BillDetailPage(): React.JSX.Element {
                 </tr>
               </thead>
               <tbody>
-                {bill.lines.map((line) => (
+                {(bill.lines ?? []).filter((line): line is NonNullable<typeof line> => line != null).map((line) => (
                   <tr
                     key={line.id}
                     className="border-b border-[var(--color-border)] last:border-b-0"
@@ -406,7 +413,7 @@ export default function BillDetailPage(): React.JSX.Element {
                     </td>
                     <td className="px-4 py-3">{line.description}</td>
                     <td className="px-4 py-3 text-right">
-                      <MoneyDisplay amount={BigInt(line.amountSatang)} size="sm" />
+                      <MoneyDisplay amount={BigInt(line.amountSatang || 0)} size="sm" />
                     </td>
                   </tr>
                 ))}

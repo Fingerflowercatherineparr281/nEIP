@@ -17,13 +17,19 @@ import { MoneyDisplay } from '@/components/domain/money-display';
 import { DocumentStatus } from '@/components/domain/document-status';
 import type { DocumentStatusValue } from '@/components/domain/document-status';
 
+/** Map API status to DocumentStatusValue ('void' → 'voided') */
+function mapStatus(s: string): DocumentStatusValue {
+  const map: Record<string, DocumentStatusValue> = { void: 'voided', converted: 'approved', expired: 'rejected' };
+  return (map[s] ?? s) as DocumentStatusValue;
+}
+
 interface PurchaseOrder {
   id: string;
   documentNumber: string;
   vendorId: string;
   totalSatang: string;
   orderDate: string;
-  status: DocumentStatusValue;
+  status: string;
 }
 
 interface PurchaseOrderListResponse {
@@ -131,18 +137,18 @@ export default function PurchaseOrdersPage(): React.JSX.Element {
                   <td className="px-4 py-3 font-mono-figures font-medium">{po.documentNumber}</td>
                   <td className="px-4 py-3 text-[var(--color-muted-foreground)]">{po.vendorId}</td>
                   <td className="px-4 py-3 text-right">
-                    <MoneyDisplay amount={BigInt(po.totalSatang)} size="sm" />
+                    <MoneyDisplay amount={BigInt(po.totalSatang || 0)} size="sm" />
                   </td>
                   <td className="px-4 py-3 text-[var(--color-muted-foreground)]">
                     {new Date(po.orderDate).toLocaleDateString('th-TH')}
                   </td>
-                  <td className="px-4 py-3"><DocumentStatus status={po.status} size="sm" /></td>
+                  <td className="px-4 py-3"><DocumentStatus status={mapStatus(po.status)} size="sm" /></td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
                       <Link href={`/purchase-orders/${po.id}`}>
                         <Button variant="ghost" size="sm"><Eye className="h-3.5 w-3.5" /> View</Button>
                       </Link>
-                      {po.status === 'draft' && (
+                      {mapStatus(po.status) === 'draft' && (
                         <Button variant="ghost" size="sm" onClick={() => setSendTarget(po)}>
                           <Send className="h-3.5 w-3.5" /> Send
                         </Button>

@@ -50,7 +50,7 @@ function toSatang(val: number | AmountWithCurrency | undefined): bigint {
   if (val === undefined || val === null) return 0n;
   if (typeof val === 'number') return BigInt(val);
   if (typeof val === 'object' && 'amountSatang' in val) {
-    return BigInt(val.amountSatang ?? 0);
+    return BigInt(val.amountSatang || 0);
   }
   return 0n;
 }

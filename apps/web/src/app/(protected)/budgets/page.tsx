@@ -440,7 +440,7 @@ export default function BudgetsPage(): React.JSX.Element {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <MoneyDisplay amount={BigInt(budget.amountSatang)} size="sm" />
+                      <MoneyDisplay amount={BigInt(budget.amountSatang || 0)} size="sm" />
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Button
