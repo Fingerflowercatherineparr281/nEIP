@@ -172,7 +172,7 @@ async function paymentCreate(): Promise<void> {
   };
 
   const result = await api.post<{ data: Payment }>(
-    '/api/v1/ar/payments',
+    '/api/v1/payments',
     payload,
   );
 
@@ -198,7 +198,7 @@ async function paymentList(options: PaymentListOptions): Promise<void> {
   }
 
   const result = await api.get<PaginatedResponse<Payment>>(
-    '/api/v1/ar/payments',
+    '/api/v1/payments',
     params,
   );
 

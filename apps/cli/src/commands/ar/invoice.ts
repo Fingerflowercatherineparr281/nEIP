@@ -160,7 +160,7 @@ async function invoiceCreate(): Promise<void> {
   };
 
   const result = await api.post<{ data: Invoice }>(
-    '/api/v1/ar/invoices',
+    '/api/v1/invoices',
     payload,
   );
 
@@ -186,7 +186,7 @@ async function invoiceList(options: InvoiceListOptions): Promise<void> {
   }
 
   const result = await api.get<PaginatedResponse<Invoice>>(
-    '/api/v1/ar/invoices',
+    '/api/v1/invoices',
     params,
   );
 
@@ -210,7 +210,7 @@ async function invoiceVoid(id: string): Promise<void> {
   }
 
   const result = await api.post<{ data: Invoice }>(
-    `/api/v1/ar/invoices/${id}/void`,
+    `/api/v1/invoices/${id}/void`,
   );
 
   if (!result.ok) {
