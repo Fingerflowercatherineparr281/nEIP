@@ -123,22 +123,12 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   // Use a fresh browser to ensure warm-up crashes don't affect storage state.
   // ---------------------------------------------------------------------------
   const ROUTES_TO_WARM = [
-    '/dashboard',
-    '/contacts',
-    '/accounts',
-    '/reports',
-    '/settings',
-    '/invoices/new',
-    '/products',
-    '/bank',
-    '/cost-centers',
-    '/profit-centers',
-    '/employees',
-    '/journal-entries',
-    '/quotations',
-    '/invoices',
-    '/payments',
-    '/receipts',
+    '/dashboard', '/contacts', '/accounts', '/reports', '/settings',
+    '/invoices/new', '/products', '/bank', '/cost-centers', '/profit-centers',
+    '/employees', '/journal-entries', '/quotations', '/invoices', '/payments',
+    '/receipts', '/inventory', '/purchase-orders', '/budgets', '/month-end',
+    '/fixed-assets', '/wht', '/departments', '/payroll', '/leave',
+    '/delivery-notes', '/sales-orders', '/credit-notes',
   ];
 
   console.log(`[global-setup] Pre-warming ${ROUTES_TO_WARM.length} routes...`);
